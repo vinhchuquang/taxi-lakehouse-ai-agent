@@ -57,6 +57,7 @@ Additional repo context for contributors and coding agents lives in:
 ## Initial Scope
 
 - Ingest monthly `Yellow Taxi` and `Green Taxi` TLC trip data into `Bronze`
+- Ingest `Taxi Zone Lookup` as reference data for enrichment
 - Normalize and test data in `Silver`
 - Publish curated marts in `Gold`
 - Expose a read-only `Text-to-SQL` API over `Gold`
@@ -65,6 +66,7 @@ Additional repo context for contributors and coding agents lives in:
 
 - Yellow Taxi trip parquet: monthly source files published by TLC
 - Green Taxi trip parquet: monthly source files published by TLC
+- Taxi Zone Lookup CSV: reference dataset for zone and borough enrichment
 
 The pipeline intentionally starts with Yellow and Green only. `FHV` and
 `HVFHV` stay out of scope until the core ELT flow is stable.
@@ -73,13 +75,16 @@ The pipeline intentionally starts with Yellow and Green only. `FHV` and
 
 - Airflow prepares one monthly manifest for `yellow_tripdata_YYYY-MM.parquet`
   and one for `green_tripdata_YYYY-MM.parquet`
+- Airflow also prepares one reference manifest for `taxi_zone_lookup.csv`
 - Each file is downloaded from the TLC CDN into the mounted local data volume
 - Downloaded files land under:
   - `data/bronze/yellow_taxi/year=YYYY/month=MM/`
   - `data/bronze/green_taxi/year=YYYY/month=MM/`
+  - `data/reference/taxi_zone_lookup/taxi_zone_lookup.csv`
 
 ## Next Steps
 
 - Materialize Bronze parquet objects into DuckDB-accessible paths
+- Join Taxi Zone Lookup into Silver and Gold marts where location names are needed
 - Add SQL validation and LLM integration in `services/api/app`
 - Add integration tests once the first runnable pipeline is in place

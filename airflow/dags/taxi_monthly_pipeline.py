@@ -7,7 +7,7 @@ from airflow import DAG
 from airflow.decorators import task
 from airflow.operators.empty import EmptyOperator
 
-from lib.tlc_ingestion import build_trip_manifest, download_tripdata_to_local
+from lib.tlc_ingestion import build_lookup_manifest, build_trip_manifest, download_file_to_local
 
 LOCAL_DATA_ROOT = os.getenv("LOCAL_DATA_ROOT", "/opt/airflow/data")
 TLC_DOWNLOAD_TIMEOUT_SECONDS = int(os.getenv("TLC_DOWNLOAD_TIMEOUT_SECONDS", "300"))
@@ -32,8 +32,12 @@ with DAG(
         return build_trip_manifest("green", data_interval_start).to_dict()
 
     @task
-    def ingest_tripdata_bronze(manifest: dict[str, str]) -> dict[str, str]:
-        return download_tripdata_to_local(
+    def prepare_lookup_reference() -> dict[str, str]:
+        return build_lookup_manifest().to_dict()
+
+    @task
+    def ingest_to_local(manifest: dict[str, str]) -> dict[str, str]:
+        return download_file_to_local(
             manifest=manifest,
             local_data_root=LOCAL_DATA_ROOT,
             timeout_seconds=TLC_DOWNLOAD_TIMEOUT_SECONDS,
@@ -46,11 +50,14 @@ with DAG(
 
     yellow_manifest = prepare_yellow_manifest()
     green_manifest = prepare_green_manifest()
-    yellow_bronze = ingest_tripdata_bronze.override(task_id="ingest_yellow_bronze")(yellow_manifest)
-    green_bronze = ingest_tripdata_bronze.override(task_id="ingest_green_bronze")(green_manifest)
+    lookup_manifest = prepare_lookup_reference()
+    yellow_bronze = ingest_to_local.override(task_id="ingest_yellow_bronze")(yellow_manifest)
+    green_bronze = ingest_to_local.override(task_id="ingest_green_bronze")(green_manifest)
+    lookup_reference = ingest_to_local.override(task_id="ingest_taxi_zone_lookup")(lookup_manifest)
 
-    start >> [yellow_manifest, green_manifest]
+    start >> [yellow_manifest, green_manifest, lookup_manifest]
     yellow_manifest >> yellow_bronze
     green_manifest >> green_bronze
-    [yellow_bronze, green_bronze] >> build_silver
+    lookup_manifest >> lookup_reference
+    [yellow_bronze, green_bronze, lookup_reference] >> build_silver
     build_silver >> build_gold >> publish_metadata >> done

@@ -18,10 +18,11 @@ Only these sources are in scope for the current phase:
 
 - `Yellow Taxi`
 - `Green Taxi`
+- `Taxi Zone Lookup` as a reference dataset only
 
 The following are out of scope until the MVP lakehouse is stable:
 
-- extra reference datasets unless the user explicitly reintroduces them
+- extra reference datasets beyond Taxi Zone Lookup unless the user explicitly reintroduces them
 - `FHV`
 - `HVFHV`
 - streaming ingestion
@@ -51,7 +52,7 @@ agent framework unless the user explicitly asks for that change.
 - The AI layer must only query `Gold` tables or views.
 - Prefer adding `service_type` to marts where Yellow and Green are combined.
 - Keep monthly partition semantics visible in paths and pipeline manifests.
-- Keep implementation focused on the two monthly TLC parquet sources only.
+- Keep Yellow and Green as the primary fact sources; Taxi Zone Lookup is only for enrichment.
 
 ## Coding Priorities
 

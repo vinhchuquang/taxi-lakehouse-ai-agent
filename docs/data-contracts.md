@@ -4,6 +4,7 @@
 
 - `yellow_tripdata_YYYY-MM.parquet`
 - `green_tripdata_YYYY-MM.parquet`
+- `taxi_zone_lookup.csv` as a reference dataset
 
 ## Bronze Contract
 
@@ -15,6 +16,7 @@ Expected local paths:
 
 - `data/bronze/yellow_taxi/year=YYYY/month=MM/...`
 - `data/bronze/green_taxi/year=YYYY/month=MM/...`
+- `data/reference/taxi_zone_lookup/taxi_zone_lookup.csv`
 
 ## Silver Contract
 
@@ -31,8 +33,8 @@ Unified trip rows should include at least:
 - `total_amount`
 
 Silver should normalize Yellow and Green into the same semantic shape.
-Do not expand the ingestion scope beyond these two monthly parquet sources unless
-the user explicitly asks for it.
+Taxi Zone Lookup may be joined as reference data, but it does not change the
+fact-source scope of the project.
 
 ## Gold Contract
 

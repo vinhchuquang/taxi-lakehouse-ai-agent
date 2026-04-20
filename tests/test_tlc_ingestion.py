@@ -31,3 +31,12 @@ def test_build_trip_manifest_for_green() -> None:
     assert manifest["local_relative_path"].endswith(
         "green_taxi/year=2024/month=02/green_tripdata_2024-02.parquet"
     )
+
+
+def test_build_lookup_manifest() -> None:
+    module = load_tlc_ingestion_module()
+    manifest = module.build_lookup_manifest().to_dict()
+
+    assert manifest["dataset"] == "taxi_zone_lookup"
+    assert manifest["source_url"].endswith("/misc/taxi+_zone_lookup.csv")
+    assert manifest["local_relative_path"] == "reference/taxi_zone_lookup/taxi_zone_lookup.csv"

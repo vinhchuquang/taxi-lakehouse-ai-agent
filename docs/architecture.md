@@ -16,14 +16,14 @@ read-only AI query interface.
 ## Data Flow
 
 1. Download monthly TLC parquet files for `Yellow Taxi` and `Green Taxi`.
-2. Land raw files in `Bronze`.
-3. Standardize both datasets into a shared `Silver` model.
-4. Build curated marts in `Gold`.
-5. Query `Gold` through BI tools and the AI agent.
+2. Download `Taxi Zone Lookup` as reference data.
+3. Land raw files in `Bronze` and reference data in a stable local path.
+4. Standardize both trip datasets into a shared `Silver` model and enrich with lookup data when needed.
+5. Build curated marts in `Gold`.
+6. Query `Gold` through BI tools and the AI agent.
 
-The current architecture phase intentionally focuses only on these two trip
-datasets and does not expand to additional TLC sources unless explicitly
-requested.
+The current architecture phase keeps Yellow and Green as the primary trip
+datasets and only adds Taxi Zone Lookup as a supporting dimension source.
 
 ## Serving Principle
 

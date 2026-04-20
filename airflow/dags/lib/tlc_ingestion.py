@@ -7,6 +7,7 @@ from shutil import copyfileobj
 from urllib.request import Request, urlopen
 
 TLC_CLOUDFRONT_BASE_URL = "https://d37ci6vzurychx.cloudfront.net"
+TLC_REFERENCE_BASE_URL = "https://s3.amazonaws.com/nyc-tlc"
 TRIP_DATASETS = {
     "yellow": "yellow_taxi",
     "green": "green_taxi",
@@ -28,6 +29,18 @@ class TripDataManifest:
         return asdict(self)
 
 
+@dataclass(frozen=True)
+class ReferenceDataManifest:
+    dataset: str
+    service_type: str
+    source_url: str
+    bronze_object_key: str
+    local_relative_path: str
+
+    def to_dict(self) -> dict[str, str]:
+        return asdict(self)
+
+
 def build_tripdata_url(dataset: str, year: int, month: int) -> str:
     if dataset not in TRIP_DATASETS:
         raise ValueError(f"Unsupported dataset: {dataset}")
@@ -36,6 +49,10 @@ def build_tripdata_url(dataset: str, year: int, month: int) -> str:
         f"{TLC_CLOUDFRONT_BASE_URL}/trip-data/"
         f"{dataset}_tripdata_{year:04d}-{month:02d}.parquet"
     )
+
+
+def build_lookup_url() -> str:
+    return f"{TLC_REFERENCE_BASE_URL}/misc/taxi+_zone_lookup.csv"
 
 
 def build_trip_manifest(dataset: str, run_date: datetime) -> TripDataManifest:
@@ -61,11 +78,22 @@ def build_trip_manifest(dataset: str, run_date: datetime) -> TripDataManifest:
     )
 
 
+def build_lookup_manifest() -> ReferenceDataManifest:
+    local_relative_path = "reference/taxi_zone_lookup/taxi_zone_lookup.csv"
+    return ReferenceDataManifest(
+        dataset="taxi_zone_lookup",
+        service_type="reference_data",
+        source_url=build_lookup_url(),
+        bronze_object_key=local_relative_path,
+        local_relative_path=local_relative_path,
+    )
+
+
 def resolve_local_path(local_data_root: str, local_relative_path: str) -> Path:
     return Path(local_data_root).joinpath(local_relative_path)
 
 
-def download_tripdata_to_local(
+def download_file_to_local(
     manifest: dict[str, str],
     local_data_root: str,
     timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS,
@@ -86,3 +114,15 @@ def download_tripdata_to_local(
         **manifest,
         "local_path": str(destination_path),
     }
+
+
+def download_tripdata_to_local(
+    manifest: dict[str, str],
+    local_data_root: str,
+    timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS,
+) -> dict[str, str]:
+    return download_file_to_local(
+        manifest=manifest,
+        local_data_root=local_data_root,
+        timeout_seconds=timeout_seconds,
+    )
