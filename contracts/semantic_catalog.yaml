@@ -1,0 +1,31 @@
+tables:
+  - name: gold_daily_kpis
+    description: Daily aggregate KPIs for Yellow Taxi and Green Taxi trips.
+    fields:
+      - name: service_type
+        description: Taxi service identifier, either yellow_taxi or green_taxi.
+      - name: pickup_date
+        description: Calendar date of the trip pickup.
+      - name: trip_count
+        description: Number of trips on the date.
+      - name: total_fare_amount
+        description: Sum of fare amount for the date.
+      - name: avg_trip_distance
+        description: Average trip distance for the date and service type.
+  - name: gold_zone_demand
+    description: Aggregated demand metrics by pickup taxi zone for Yellow and Green Taxi.
+    fields:
+      - name: service_type
+        description: Taxi service identifier, either yellow_taxi or green_taxi.
+      - name: pickup_date
+        description: Calendar date of the trip pickup.
+      - name: zone_id
+        description: Taxi zone identifier.
+      - name: borough
+        description: Borough name associated with the taxi zone.
+      - name: zone_name
+        description: Human-readable zone name.
+      - name: trip_count
+        description: Number of trips observed in the zone.
+      - name: total_amount
+        description: Sum of total trip amount in the zone and day.

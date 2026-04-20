@@ -1,0 +1,7 @@
+taxi_lakehouse:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: ../warehouse/analytics.duckdb
+      threads: 4
