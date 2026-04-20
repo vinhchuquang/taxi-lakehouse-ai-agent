@@ -16,6 +16,7 @@ agent over the curated analytics layer.
 
 ```text
 .
+|-- docs/
 |-- airflow/
 |   `-- dags/
 |-- dbt/
@@ -27,6 +28,16 @@ agent over the curated analytics layer.
 |-- tests/
 `-- docker-compose.yml
 ```
+
+## Project Context
+
+Additional repo context for contributors and coding agents lives in:
+
+- `AGENTS.md`
+- `docs/architecture.md`
+- `docs/data-contracts.md`
+- `docs/source-notes.md`
+- `docs/runbook.md`
 
 ## Quick Start
 
@@ -46,7 +57,6 @@ agent over the curated analytics layer.
 ## Initial Scope
 
 - Ingest monthly `Yellow Taxi` and `Green Taxi` TLC trip data into `Bronze`
-- Ingest `Taxi Zone Lookup` as the shared reference dataset
 - Normalize and test data in `Silver`
 - Publish curated marts in `Gold`
 - Expose a read-only `Text-to-SQL` API over `Gold`
@@ -55,7 +65,6 @@ agent over the curated analytics layer.
 
 - Yellow Taxi trip parquet: monthly source files published by TLC
 - Green Taxi trip parquet: monthly source files published by TLC
-- Taxi Zone Lookup CSV: shared dimensional reference for pickup and dropoff zones
 
 The pipeline intentionally starts with Yellow and Green only. `FHV` and
 `HVFHV` stay out of scope until the core ELT flow is stable.
@@ -71,7 +80,6 @@ The pipeline intentionally starts with Yellow and Green only. `FHV` and
 
 ## Next Steps
 
-- Add the `Taxi Zone Lookup` download task to complete the reference layer
 - Materialize Bronze parquet objects into DuckDB-accessible paths
 - Add SQL validation and LLM integration in `services/api/app`
 - Add integration tests once the first runnable pipeline is in place

@@ -1,0 +1,50 @@
+# Data Contracts
+
+## Sources In Scope
+
+- `yellow_tripdata_YYYY-MM.parquet`
+- `green_tripdata_YYYY-MM.parquet`
+
+## Bronze Contract
+
+- Preserve source files with minimal mutation.
+- Store files in partitioned paths by service type, year, and month.
+- Keep naming close to the original TLC source names.
+
+Expected local paths:
+
+- `data/bronze/yellow_taxi/year=YYYY/month=MM/...`
+- `data/bronze/green_taxi/year=YYYY/month=MM/...`
+
+## Silver Contract
+
+Unified trip rows should include at least:
+
+- `service_type`
+- `pickup_date`
+- `pickup_at`
+- `dropoff_at`
+- `pickup_zone_id`
+- `dropoff_zone_id`
+- `trip_distance`
+- `fare_amount`
+- `total_amount`
+
+Silver should normalize Yellow and Green into the same semantic shape.
+Do not expand the ingestion scope beyond these two monthly parquet sources unless
+the user explicitly asks for it.
+
+## Gold Contract
+
+Gold is the serving layer for analytics and AI.
+
+Current marts:
+
+- `gold_daily_kpis`
+- `gold_zone_demand`
+
+Rules:
+
+- prefer explicit metrics and dimensions
+- keep `service_type` when combining Yellow and Green
+- use only business-safe, curated columns for AI access
