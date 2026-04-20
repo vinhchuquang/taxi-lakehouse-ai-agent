@@ -60,9 +60,18 @@ agent over the curated analytics layer.
 The pipeline intentionally starts with Yellow and Green only. `FHV` and
 `HVFHV` stay out of scope until the core ELT flow is stable.
 
+## Current Bronze Ingestion
+
+- Airflow prepares one monthly manifest for `yellow_tripdata_YYYY-MM.parquet`
+  and one for `green_tripdata_YYYY-MM.parquet`
+- Each file is downloaded from the TLC CDN into the mounted local data volume
+- Downloaded files land under:
+  - `data/bronze/yellow_taxi/year=YYYY/month=MM/`
+  - `data/bronze/green_taxi/year=YYYY/month=MM/`
+
 ## Next Steps
 
-- Replace the Bronze `EmptyOperator` tasks with download/upload operators
+- Add the `Taxi Zone Lookup` download task to complete the reference layer
 - Materialize Bronze parquet objects into DuckDB-accessible paths
 - Add SQL validation and LLM integration in `services/api/app`
 - Add integration tests once the first runnable pipeline is in place
