@@ -1,0 +1,39 @@
+version: 2
+
+models:
+  - name: bronze_yellow_trips
+    description: Monthly Yellow Taxi parquet files landed in the Bronze layer.
+  - name: bronze_green_trips
+    description: Monthly Green Taxi parquet files landed in the Bronze layer.
+  - name: bronze_taxi_zone_lookup
+    description: Taxi zone lookup reference file from the TLC source.
+  - name: silver_trips_unified
+    description: Unified and cleaned Yellow and Green taxi trip records.
+    columns:
+      - name: service_type
+        tests:
+          - not_null
+      - name: pickup_date
+        tests:
+          - not_null
+      - name: pickup_zone_id
+        tests:
+          - not_null
+      - name: dropoff_zone_id
+        tests:
+          - not_null
+  - name: gold_daily_kpis
+    description: Daily KPI mart split by taxi service type.
+    columns:
+      - name: service_type
+        tests:
+          - not_null
+      - name: pickup_date
+        tests:
+          - not_null
+  - name: gold_zone_demand
+    description: Daily demand and revenue metrics by pickup taxi zone.
+    columns:
+      - name: zone_id
+        tests:
+          - not_null
