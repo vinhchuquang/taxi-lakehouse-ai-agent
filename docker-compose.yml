@@ -37,6 +37,7 @@ services:
       AIRFLOW_UID: ${AIRFLOW_UID}
     volumes:
       - ./airflow/dags:/opt/airflow/dags
+      - ./data:/opt/airflow/data
       - ./logs/airflow:/opt/airflow/logs
     command: >
       bash -c "airflow db migrate &&
@@ -62,6 +63,7 @@ services:
       - "8080:8080"
     volumes:
       - ./airflow/dags:/opt/airflow/dags
+      - ./data:/opt/airflow/data
       - ./logs/airflow:/opt/airflow/logs
     command: webserver
 
@@ -77,6 +79,7 @@ services:
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
     volumes:
       - ./airflow/dags:/opt/airflow/dags
+      - ./data:/opt/airflow/data
       - ./logs/airflow:/opt/airflow/logs
     command: scheduler
 

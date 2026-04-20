@@ -1,26 +1,16 @@
 from __future__ import annotations
 
+import os
 from datetime import datetime
 
 from airflow import DAG
 from airflow.decorators import task
 from airflow.operators.empty import EmptyOperator
 
-TLC_CLOUDFRONT_BASE_URL = "https://d37ci6vzurychx.cloudfront.net"
-TRIP_DATASETS = ("yellow", "green")
+from lib.tlc_ingestion import build_trip_manifest, download_tripdata_to_local
 
-
-def build_tripdata_url(dataset: str, year: int, month: int) -> str:
-    if dataset not in TRIP_DATASETS:
-        raise ValueError(f"Unsupported dataset: {dataset}")
-    return (
-        f"{TLC_CLOUDFRONT_BASE_URL}/trip-data/"
-        f"{dataset}_tripdata_{year:04d}-{month:02d}.parquet"
-    )
-
-
-def build_lookup_url() -> str:
-    return f"{TLC_CLOUDFRONT_BASE_URL}/misc/taxi_zone_lookup.csv"
+LOCAL_DATA_ROOT = os.getenv("LOCAL_DATA_ROOT", "/opt/airflow/data")
+TLC_DOWNLOAD_TIMEOUT_SECONDS = int(os.getenv("TLC_DOWNLOAD_TIMEOUT_SECONDS", "300"))
 
 
 with DAG(
@@ -32,51 +22,23 @@ with DAG(
     tags=["taxi", "lakehouse", "elt", "yellow", "green"],
 ) as dag:
     start = EmptyOperator(task_id="start")
-    build_context = EmptyOperator(task_id="build_context")
 
     @task
     def prepare_yellow_manifest(data_interval_start=None) -> dict[str, str]:
-        year = data_interval_start.year
-        month = data_interval_start.month
-        return {
-            "dataset": "yellow",
-            "service_type": "yellow_taxi",
-            "year": f"{year:04d}",
-            "month": f"{month:02d}",
-            "source_url": build_tripdata_url("yellow", year, month),
-            "bronze_object_key": (
-                f"bronze/yellow_taxi/year={year:04d}/month={month:02d}/"
-                f"yellow_tripdata_{year:04d}-{month:02d}.parquet"
-            ),
-        }
+        return build_trip_manifest("yellow", data_interval_start).to_dict()
 
     @task
     def prepare_green_manifest(data_interval_start=None) -> dict[str, str]:
-        year = data_interval_start.year
-        month = data_interval_start.month
-        return {
-            "dataset": "green",
-            "service_type": "green_taxi",
-            "year": f"{year:04d}",
-            "month": f"{month:02d}",
-            "source_url": build_tripdata_url("green", year, month),
-            "bronze_object_key": (
-                f"bronze/green_taxi/year={year:04d}/month={month:02d}/"
-                f"green_tripdata_{year:04d}-{month:02d}.parquet"
-            ),
-        }
+        return build_trip_manifest("green", data_interval_start).to_dict()
 
     @task
-    def prepare_lookup_manifest() -> dict[str, str]:
-        return {
-            "dataset": "taxi_zone_lookup",
-            "source_url": build_lookup_url(),
-            "bronze_object_key": "reference/taxi_zone_lookup/taxi_zone_lookup.csv",
-        }
+    def ingest_tripdata_bronze(manifest: dict[str, str]) -> dict[str, str]:
+        return download_tripdata_to_local(
+            manifest=manifest,
+            local_data_root=LOCAL_DATA_ROOT,
+            timeout_seconds=TLC_DOWNLOAD_TIMEOUT_SECONDS,
+        )
 
-    ingest_yellow_bronze = EmptyOperator(task_id="ingest_yellow_bronze")
-    ingest_green_bronze = EmptyOperator(task_id="ingest_green_bronze")
-    ingest_zone_lookup = EmptyOperator(task_id="ingest_zone_lookup")
     build_silver = EmptyOperator(task_id="build_silver")
     build_gold = EmptyOperator(task_id="build_gold")
     publish_metadata = EmptyOperator(task_id="publish_metadata")
@@ -84,11 +46,11 @@ with DAG(
 
     yellow_manifest = prepare_yellow_manifest()
     green_manifest = prepare_green_manifest()
-    lookup_manifest = prepare_lookup_manifest()
+    yellow_bronze = ingest_tripdata_bronze.override(task_id="ingest_yellow_bronze")(yellow_manifest)
+    green_bronze = ingest_tripdata_bronze.override(task_id="ingest_green_bronze")(green_manifest)
 
-    start >> build_context
-    build_context >> yellow_manifest >> ingest_yellow_bronze
-    build_context >> green_manifest >> ingest_green_bronze
-    build_context >> lookup_manifest >> ingest_zone_lookup
-    [ingest_yellow_bronze, ingest_green_bronze, ingest_zone_lookup] >> build_silver
+    start >> [yellow_manifest, green_manifest]
+    yellow_manifest >> yellow_bronze
+    green_manifest >> green_bronze
+    [yellow_bronze, green_bronze] >> build_silver
     build_silver >> build_gold >> publish_metadata >> done
