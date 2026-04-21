@@ -20,6 +20,8 @@
 
 - Bronze ingestion currently starts with Yellow and Green monthly files.
 - Taxi Zone Lookup is ingested separately as reference data for enrichment.
+- Ingestion downloads each source file to the local data volume and uploads the
+  same object key into MinIO bucket `taxi-lakehouse`.
 - Airflow runs `dbt build` inside the scheduler/webserver image using `dbt-duckdb`.
 - The local `Bronze -> Silver -> Gold` path can be validated with `dbt build`.
 - The AI query API validates generated SQL with `sqlglot`, only allows read-only `SELECT`
@@ -60,3 +62,14 @@ Recommended demo flow:
 3. Use `SQL Test` with the default query to show deterministic DuckDB results.
 4. Use `Guardrails` to show that Silver access is blocked.
 5. Use `Ask AI` to generate SQL from a natural-language question when `OPENAI_API_KEY` is configured.
+
+## MinIO Checks
+
+Open `http://localhost:9001` and log in with `MINIO_ROOT_USER` and
+`MINIO_ROOT_PASSWORD` from `.env`.
+
+After a successful ingestion run, bucket `taxi-lakehouse` should contain:
+
+- `bronze/yellow_taxi/year=YYYY/month=MM/yellow_tripdata_YYYY-MM.parquet`
+- `bronze/green_taxi/year=YYYY/month=MM/green_tripdata_YYYY-MM.parquet`
+- `reference/taxi_zone_lookup/taxi_zone_lookup.csv`

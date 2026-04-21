@@ -9,10 +9,14 @@ from airflow.decorators import task
 from airflow.operators.empty import EmptyOperator
 
 from lib.dbt_runner import run_dbt_build
-from lib.tlc_ingestion import build_lookup_manifest, build_trip_manifest, download_file_to_local
+from lib.tlc_ingestion import build_lookup_manifest, build_trip_manifest, ingest_file_to_minio
 
 LOCAL_DATA_ROOT = os.getenv("LOCAL_DATA_ROOT", "/opt/airflow/data")
 TLC_DOWNLOAD_TIMEOUT_SECONDS = int(os.getenv("TLC_DOWNLOAD_TIMEOUT_SECONDS", "300"))
+MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "http://minio:9000")
+MINIO_BUCKET = os.getenv("MINIO_BUCKET", "taxi-lakehouse")
+MINIO_ROOT_USER = os.getenv("MINIO_ROOT_USER", "minioadmin")
+MINIO_ROOT_PASSWORD = os.getenv("MINIO_ROOT_PASSWORD", "minioadmin123")
 LOGGER = logging.getLogger(__name__)
 
 
@@ -56,18 +60,23 @@ with DAG(
         return manifest
 
     @task
-    def ingest_to_local(manifest: dict[str, str]) -> dict[str, str]:
+    def ingest_to_bronze(manifest: dict[str, str]) -> dict[str, str]:
         LOGGER.info(
-            "Starting local ingestion for dataset=%s into root=%s",
+            "Starting Bronze ingestion for dataset=%s into root=%s and bucket=%s",
             manifest["dataset"],
             LOCAL_DATA_ROOT,
+            MINIO_BUCKET,
         )
-        result = download_file_to_local(
+        result = ingest_file_to_minio(
             manifest=manifest,
             local_data_root=LOCAL_DATA_ROOT,
+            minio_endpoint=MINIO_ENDPOINT,
+            minio_bucket=MINIO_BUCKET,
+            minio_access_key=MINIO_ROOT_USER,
+            minio_secret_key=MINIO_ROOT_PASSWORD,
             timeout_seconds=TLC_DOWNLOAD_TIMEOUT_SECONDS,
         )
-        LOGGER.info("Finished local ingestion for dataset=%s: %s", manifest["dataset"], result)
+        LOGGER.info("Finished Bronze ingestion for dataset=%s: %s", manifest["dataset"], result)
         return result
 
     @task
@@ -88,9 +97,9 @@ with DAG(
     yellow_manifest = prepare_yellow_manifest()
     green_manifest = prepare_green_manifest()
     lookup_manifest = prepare_lookup_reference()
-    yellow_bronze = ingest_to_local.override(task_id="ingest_yellow_bronze")(yellow_manifest)
-    green_bronze = ingest_to_local.override(task_id="ingest_green_bronze")(green_manifest)
-    lookup_reference = ingest_to_local.override(task_id="ingest_taxi_zone_lookup")(lookup_manifest)
+    yellow_bronze = ingest_to_bronze.override(task_id="ingest_yellow_bronze")(yellow_manifest)
+    green_bronze = ingest_to_bronze.override(task_id="ingest_green_bronze")(green_manifest)
+    lookup_reference = ingest_to_bronze.override(task_id="ingest_taxi_zone_lookup")(lookup_manifest)
     build_silver = build_silver_layer()
     build_gold = build_gold_layer()
 

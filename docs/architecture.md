@@ -8,7 +8,7 @@ read-only AI query interface.
 ## Main Components
 
 - `Airflow` orchestrates monthly ingestion and downstream transforms.
-- `MinIO` stores raw and curated files as object storage.
+- `MinIO` stores raw Bronze files as object storage.
 - `dbt` models the transformation layers.
 - `DuckDB` serves local analytics and query execution.
 - `FastAPI` exposes schema and query endpoints to the AI layer.

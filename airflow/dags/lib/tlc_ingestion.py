@@ -132,6 +132,88 @@ def download_file_to_local(
     }
 
 
+def upload_local_file_to_minio(
+    manifest: dict[str, str],
+    minio_endpoint: str,
+    minio_bucket: str,
+    minio_access_key: str,
+    minio_secret_key: str,
+) -> dict[str, str]:
+    local_path = Path(manifest["local_path"])
+    if not local_path.exists():
+        raise FileNotFoundError(f"Local file does not exist: {local_path}")
+
+    import boto3
+    from botocore.client import Config
+
+    object_key = manifest["bronze_object_key"]
+    client = boto3.client(
+        "s3",
+        endpoint_url=minio_endpoint,
+        aws_access_key_id=minio_access_key,
+        aws_secret_access_key=minio_secret_key,
+        config=Config(signature_version="s3v4"),
+        region_name="us-east-1",
+    )
+
+    existing_buckets = {
+        bucket["Name"]
+        for bucket in client.list_buckets().get("Buckets", [])
+    }
+    if minio_bucket not in existing_buckets:
+        LOGGER.info("Creating MinIO bucket=%s", minio_bucket)
+        client.create_bucket(Bucket=minio_bucket)
+
+    LOGGER.info(
+        "Uploading dataset=%s from %s to s3://%s/%s",
+        manifest["dataset"],
+        local_path,
+        minio_bucket,
+        object_key,
+    )
+    client.upload_file(str(local_path), minio_bucket, object_key)
+    file_size_bytes = local_path.stat().st_size
+    LOGGER.info(
+        "Uploaded dataset=%s to s3://%s/%s (%s bytes)",
+        manifest["dataset"],
+        minio_bucket,
+        object_key,
+        file_size_bytes,
+    )
+
+    return {
+        **manifest,
+        "minio_bucket": minio_bucket,
+        "minio_endpoint": minio_endpoint,
+        "minio_object_key": object_key,
+        "minio_uri": f"s3://{minio_bucket}/{object_key}",
+        "file_size_bytes": str(file_size_bytes),
+    }
+
+
+def ingest_file_to_minio(
+    manifest: dict[str, str],
+    local_data_root: str,
+    minio_endpoint: str,
+    minio_bucket: str,
+    minio_access_key: str,
+    minio_secret_key: str,
+    timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS,
+) -> dict[str, str]:
+    downloaded_manifest = download_file_to_local(
+        manifest=manifest,
+        local_data_root=local_data_root,
+        timeout_seconds=timeout_seconds,
+    )
+    return upload_local_file_to_minio(
+        manifest=downloaded_manifest,
+        minio_endpoint=minio_endpoint,
+        minio_bucket=minio_bucket,
+        minio_access_key=minio_access_key,
+        minio_secret_key=minio_secret_key,
+    )
+
+
 def download_tripdata_to_local(
     manifest: dict[str, str],
     local_data_root: str,
