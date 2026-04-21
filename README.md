@@ -1,95 +1,191 @@
 # taxi-lakehouse-ai-agent
 
-Taxi Lakehouse AI Agent is a graduation-project style repository for building a
-local-first data lakehouse on taxi trip data and exposing a read-only AI query
-agent over the curated analytics layer.
+Đây là repo đồ án xây dựng một nền tảng lakehouse local-first cho dữ liệu taxi
+NYC TLC, kèm AI agent read-only để hỏi dữ liệu Gold bằng ngôn ngữ tự nhiên.
 
-## Architecture
+## Kiến Trúc
 
-- `MinIO` stores raw and curated objects.
-- `Airflow` orchestrates monthly ELT ingestion and transformation jobs.
-- `dbt` models the `Bronze -> Silver -> Gold` layers.
-- `DuckDB` serves the analytics layer consumed by BI and the AI agent.
-- `FastAPI` exposes health, schema, and query endpoints for the AI query agent.
+- `MinIO` lưu dữ liệu Bronze dạng object storage.
+- `Airflow` điều phối pipeline ingest và transform theo tháng.
+- `dbt` xây dựng các lớp `Bronze -> Silver -> Gold` và chạy data tests.
+- `DuckDB` lưu warehouse local để phục vụ phân tích, BI và AI query.
+- `FastAPI` cung cấp API health, schema và query read-only.
+- `OpenAI API` sinh SQL từ câu hỏi tự nhiên.
+- `sqlglot` kiểm tra SQL guardrails trước khi chạy.
+- `Streamlit` cung cấp giao diện demo AI agent và biểu đồ tự động.
 
-## Repository Layout
+## Cấu Trúc Repo
 
 ```text
 .
-|-- docs/
 |-- airflow/
 |   `-- dags/
+|-- contracts/
 |-- dbt/
 |   `-- models/
-|-- services/
-|   `-- api/
-|-- contracts/
+|-- docs/
 |-- infra/
+|-- services/
+|   |-- api/
+|   `-- demo/
 |-- tests/
 `-- docker-compose.yml
 ```
 
-## Project Context
+## Phạm Vi Hiện Tại
 
-Additional repo context for contributors and coding agents lives in:
+Đang tập trung vào MVP với:
 
-- `AGENTS.md`
-- `docs/architecture.md`
-- `docs/data-contracts.md`
-- `docs/source-notes.md`
-- `docs/runbook.md`
+- `Yellow Taxi` monthly trip parquet
+- `Green Taxi` monthly trip parquet
+- `Taxi Zone Lookup` làm reference dataset
+- pipeline `Bronze -> Silver -> Gold`
+- API Text-to-SQL read-only trên Gold
+- demo UI bằng Streamlit
 
-## Quick Start
+Tạm thời chưa đưa vào scope:
 
-1. Copy `.env.example` to `.env` and update secrets.
-2. Review `docker-compose.yml`.
-3. Start the local stack:
+- `FHV`
+- `HVFHV`
+- streaming ingestion
+- agent có quyền ghi dữ liệu
+- auth/authorization production-grade
+
+## Chạy Local
+
+1. Copy `.env.example` thành `.env` và cập nhật secret nếu cần.
+2. Build và chạy stack:
 
    ```bash
    docker compose up --build
    ```
 
-4. Open:
+3. Mở các service:
+
    - Airflow: `http://localhost:8080`
    - MinIO Console: `http://localhost:9001`
    - API docs: `http://localhost:8000/docs`
+   - Streamlit demo: `http://localhost:8501`
 
-## Initial Scope
+Thông tin đăng nhập mặc định:
 
-- Ingest monthly `Yellow Taxi` and `Green Taxi` TLC trip data into `Bronze`
-- Ingest `Taxi Zone Lookup` as reference data for enrichment
-- Normalize and test data in `Silver`
-- Publish curated marts in `Gold`
-- Expose a read-only `Text-to-SQL` API over `Gold`
+- Airflow: `admin` / `admin`
+- MinIO: xem `MINIO_ROOT_USER` và `MINIO_ROOT_PASSWORD` trong `.env`
 
-## TLC Data Sources
+## Pipeline Dữ Liệu
 
-- Yellow Taxi trip parquet: monthly source files published by TLC
-- Green Taxi trip parquet: monthly source files published by TLC
-- Taxi Zone Lookup CSV: reference dataset for zone and borough enrichment
+Airflow DAG chính: `taxi_monthly_pipeline`.
 
-The pipeline intentionally starts with Yellow and Green only. `FHV` and
-`HVFHV` stay out of scope until the core ELT flow is stable.
+Luồng xử lý:
 
-## Current Bronze Ingestion
+1. Tạo manifest cho Yellow, Green và Taxi Zone Lookup.
+2. Download file từ TLC CDN vào local mirror dưới `data/`.
+3. Upload cùng object key vào bucket MinIO `taxi-lakehouse`.
+4. Chạy `dbt build` cho Bronze và Silver.
+5. Chạy `dbt build` cho Gold.
+6. DuckDB warehouse được lưu dưới `warehouse/analytics.duckdb`.
 
-- Airflow prepares one monthly manifest for `yellow_tripdata_YYYY-MM.parquet`
-  and one for `green_tripdata_YYYY-MM.parquet`
-- Airflow also prepares one reference manifest for `taxi_zone_lookup.csv`
-- Each file is downloaded from the TLC CDN into the mounted local data volume
-- Downloaded files land under:
-  - `data/bronze/yellow_taxi/year=YYYY/month=MM/`
-  - `data/bronze/green_taxi/year=YYYY/month=MM/`
-  - `data/reference/taxi_zone_lookup/taxi_zone_lookup.csv`
+Object MinIO kỳ vọng:
 
-## Current Transform Execution
+```text
+taxi-lakehouse/
+  bronze/yellow_taxi/year=YYYY/month=MM/yellow_tripdata_YYYY-MM.parquet
+  bronze/green_taxi/year=YYYY/month=MM/green_tripdata_YYYY-MM.parquet
+  reference/taxi_zone_lookup/taxi_zone_lookup.csv
+```
 
-- Airflow now runs `dbt build` for Bronze and Silver after ingestion completes
-- Gold marts are built in a separate downstream task
-- DuckDB warehouse files are persisted under `warehouse/`
+## Mô Hình Dữ Liệu
 
-## Next Steps
+- `Bronze`: đọc raw parquet/csv từ local mirror tương ứng với object đã upload MinIO.
+- `Silver`: chuẩn hóa Yellow và Green về schema chung.
+- `Gold`: marts phục vụ BI và AI agent.
 
-- Join Taxi Zone Lookup into more Silver and Gold marts where location names are needed
-- Add SQL validation and LLM integration in `services/api/app`
-- Add integration tests once the first runnable pipeline is in place
+Gold marts hiện có:
+
+- `gold_daily_kpis`
+- `gold_zone_demand`
+
+Silver hiện filter các trip có `pickup_at` nằm ngoài tháng partition của source
+file để loại bỏ ngày bất thường.
+
+## AI Query Agent
+
+API chính:
+
+- `GET /healthz`
+- `GET /api/v1/schema`
+- `POST /api/v1/query`
+
+Guardrails:
+
+- chỉ cho `SELECT`
+- chặn DML/DDL
+- chỉ cho truy cập bảng Gold trong `contracts/semantic_catalog.yaml`
+- ép `LIMIT <= max_rows`
+- chạy DuckDB ở chế độ read-only
+
+`/api/v1/query` hỗ trợ hai chế độ:
+
+1. Truyền `question` để OpenAI sinh SQL.
+2. Truyền thêm `sql` để test deterministic và demo guardrails.
+
+Ví dụ:
+
+```json
+{
+  "question": "Show daily trip counts by service type",
+  "max_rows": 10,
+  "sql": "select service_type, pickup_date, trip_count from gold_daily_kpis order by pickup_date, service_type"
+}
+```
+
+## Streamlit Demo
+
+Chạy riêng API và demo:
+
+```bash
+docker compose up --build api demo
+```
+
+Mở:
+
+```text
+http://localhost:8501
+```
+
+Demo hỗ trợ:
+
+- xem health/schema của API
+- hỏi AI bằng ngôn ngữ tự nhiên
+- chạy SQL override để test guardrails
+- xem SQL đã validate
+- tự động vẽ line/bar chart từ kết quả
+- cảnh báo kết quả rỗng, chạm limit, metric âm hoặc date range bất thường
+
+## Kiểm Thử
+
+Chạy unit tests:
+
+```bash
+python -m pytest -p no:cacheprovider
+```
+
+Chạy dbt build trong Airflow container:
+
+```bash
+docker compose exec airflow-scheduler python -c "import sys; sys.path.insert(0, '/opt/airflow/dags'); from lib.dbt_runner import run_dbt_build; run_dbt_build()"
+```
+
+Trigger DAG với config tháng:
+
+```bash
+docker compose exec airflow-scheduler python -c "from airflow.api.common.trigger_dag import trigger_dag; trigger_dag(dag_id='taxi_monthly_pipeline', run_id='e2e_2024_01', conf={'year': 2024, 'month': 1})"
+```
+
+## Tài Liệu Thêm
+
+- `AGENTS.md`: hướng dẫn cho coding agents
+- `docs/architecture.md`: kiến trúc tổng quan
+- `docs/data-contracts.md`: hợp đồng dữ liệu
+- `docs/source-notes.md`: ghi chú nguồn dữ liệu
+- `docs/runbook.md`: hướng dẫn vận hành local
