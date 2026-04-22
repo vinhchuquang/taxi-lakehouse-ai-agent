@@ -28,7 +28,9 @@ warehouse step.
 
 ## Phase 3: Add Dimensional Layer
 
-After the MVP is stable, add Gold dim/fact models:
+Status: implemented for the MVP Gold layer.
+
+Gold dim/fact models:
 
 - `dim_date`: date, month, quarter, year, day of week.
 - `dim_zone`: Taxi Zone Lookup attributes such as zone, borough, and service
@@ -43,9 +45,9 @@ metrics include `trip_distance`, `fare_amount`, `total_amount`, and
 
 ## Phase 4: Build Marts From Dim/Fact
 
-- Keep `gold_daily_kpis` and `gold_zone_demand` as serving marts.
-- Once dimensional models are stable, rebuild mart logic from `fact_trips` and
-  related dimensions.
+- Status: implemented for the existing serving marts.
+- Keep `gold_daily_kpis` and `gold_zone_demand` as serving marts built from
+  `fact_trips` and related dimensions.
 - Add new marts for repeated BI or AI questions instead of making AI join facts
   directly every time.
 

@@ -19,7 +19,8 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: ["yellow_taxi", "green_taxi"]
+              arguments:
+                values: ["yellow_taxi", "green_taxi"]
       - name: source_year
         tests:
           - not_null
@@ -27,8 +28,9 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-              quote: false
+              arguments:
+                values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+                quote: false
       - name: pickup_date
         tests:
           - not_null
@@ -38,14 +40,104 @@ models:
       - name: dropoff_zone_id
         tests:
           - not_null
+  - name: dim_date
+    description: Date dimension derived from valid Silver pickup dates.
+    columns:
+      - name: pickup_date
+        tests:
+          - not_null
+          - unique
+      - name: year
+        tests:
+          - not_null
+      - name: month
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+                quote: false
+  - name: dim_service_type
+    description: Service type dimension for taxi services included in the MVP.
+    columns:
+      - name: service_type
+        tests:
+          - not_null
+          - unique
+          - accepted_values:
+              arguments:
+                values: ["yellow_taxi", "green_taxi"]
+      - name: service_type_name
+        tests:
+          - not_null
+  - name: dim_zone
+    description: Taxi zone dimension sourced from the TLC Taxi Zone Lookup reference file.
+    columns:
+      - name: zone_id
+        tests:
+          - not_null
+          - unique
+      - name: borough
+        tests:
+          - not_null
+      - name: zone_name
+        tests:
+          - not_null
+  - name: fact_trips
+    description: Trip-level Gold fact table built from valid Silver trips.
+    columns:
+      - name: service_type
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_service_type')
+                field: service_type
+      - name: pickup_date
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: pickup_date
+      - name: pickup_at
+        tests:
+          - not_null
+      - name: dropoff_at
+        tests:
+          - not_null
+      - name: pickup_zone_id
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_zone')
+                field: zone_id
+      - name: dropoff_zone_id
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_zone')
+                field: zone_id
+      - name: trip_distance
+        tests:
+          - not_null
+      - name: fare_amount
+        tests:
+          - not_null
+      - name: total_amount
+        tests:
+          - not_null
   - name: gold_daily_kpis
-    description: Daily KPI mart split by taxi service type.
+    description: Daily KPI mart split by taxi service type, built from fact_trips.
     columns:
       - name: service_type
         tests:
           - not_null
           - accepted_values:
-              values: ["yellow_taxi", "green_taxi"]
+              arguments:
+                values: ["yellow_taxi", "green_taxi"]
       - name: pickup_date
         tests:
           - not_null
@@ -59,13 +151,14 @@ models:
         tests:
           - not_null
   - name: gold_zone_demand
-    description: Daily demand and revenue metrics by pickup taxi zone.
+    description: Daily demand and revenue metrics by pickup taxi zone, built from fact_trips and dim_zone.
     columns:
       - name: service_type
         tests:
           - not_null
           - accepted_values:
-              values: ["yellow_taxi", "green_taxi"]
+              arguments:
+                values: ["yellow_taxi", "green_taxi"]
       - name: pickup_date
         tests:
           - not_null
@@ -73,8 +166,9 @@ models:
         tests:
           - not_null
           - relationships:
-              to: ref('bronze_taxi_zone_lookup')
-              field: zone_id
+              arguments:
+                to: ref('bronze_taxi_zone_lookup')
+                field: zone_id
       - name: borough
         tests:
           - not_null

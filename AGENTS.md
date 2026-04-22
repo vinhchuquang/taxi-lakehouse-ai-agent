@@ -55,8 +55,8 @@ agent framework unless the user explicitly asks for that change.
 - Keep Yellow and Green as the primary fact sources; Taxi Zone Lookup is only for enrichment.
 - For the current MVP, keep `gold_daily_kpis` and `gold_zone_demand` as curated
   serving marts.
-- For the next phase, dimensional models are welcome in Gold: `dim_date`,
-  `dim_zone`, `dim_service_type`, and `fact_trips`.
+- Gold dimensional models exist: `dim_date`, `dim_zone`, `dim_service_type`,
+  and `fact_trips`.
 - Do not expose `fact_trips` broadly to the AI layer until the semantic catalog
   describes its grain, metrics, and allowed join paths.
 - Keep aggregate marts as the preferred AI serving surface for common questions.

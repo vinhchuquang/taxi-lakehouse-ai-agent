@@ -69,17 +69,17 @@ and the recommended next step. Do not include secrets from `.env`.
 ### Gold
 
 - MVP serving marts are `gold_daily_kpis` and `gold_zone_demand`.
-- Next-phase dimensional models may include `dim_date`, `dim_zone`,
-  `dim_service_type`, and `fact_trips`.
+- Gold dimensional models exist: `dim_date`, `dim_zone`, `dim_service_type`, and
+  `fact_trips`.
 - `fact_trips` grain should be one valid Silver trip per row.
 - Keep aggregate marts as the preferred surface for common dashboard and AI
   questions.
 - If adding a Gold model, update `dbt/models/schema.yml`, docs, and
   `contracts/semantic_catalog.yaml` when AI may query it.
 
-## Next-Phase Dim/Fact
+## Dim/Fact Layer
 
-Use this direction when implementing dimensional models:
+Use this direction when maintaining dimensional models:
 
 - `dim_date`: date, month, quarter, year, day of week.
 - `dim_zone`: from Taxi Zone Lookup, with `zone_id`, `borough`, `zone_name`, and

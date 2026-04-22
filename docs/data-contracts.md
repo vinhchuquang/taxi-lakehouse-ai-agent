@@ -49,15 +49,23 @@ Current marts:
 - `gold_daily_kpis`
 - `gold_zone_demand`
 
+Current dimensional models:
+
+- `dim_date`
+- `dim_zone`
+- `dim_service_type`
+- `fact_trips`
+
 Rules:
 
 - prefer explicit metrics and dimensions
 - keep `service_type` when combining Yellow and Green
 - use only business-safe, curated columns for AI access
-- next phase may add `dim_date`, `dim_zone`, `dim_service_type`, and `fact_trips`
-  as Gold dimensional models
+- `fact_trips` grain is one valid Silver trip per row
 - keep aggregate marts as the preferred serving surface for common BI and AI
   questions
+- do not expose `fact_trips` directly to AI until semantic metadata describes
+  grain, metrics, and safe join paths
 
 ## AI Query Contract
 

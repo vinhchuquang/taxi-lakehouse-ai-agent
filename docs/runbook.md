@@ -77,6 +77,39 @@ Notes:
 - Keep `.env` untracked. If a real `OPENAI_API_KEY` is exposed in terminal output
   or logs, rotate it before sharing the session or repository artifacts.
 
+## Last Verified Dimensional Layer State
+
+Last local Gold dimensional verification: `2026-04-22`.
+
+Implemented models:
+
+- `dim_date`
+- `dim_zone`
+- `dim_service_type`
+- `fact_trips`
+
+Verification:
+
+- services were started with `docker compose up -d`; no rebuild was needed
+- `python -m pytest -p no:cacheprovider` passed with `7 passed, 2 skipped`
+- Gold dbt build passed with `PASS=50 WARN=0 ERROR=0 SKIP=0`
+- full dbt build passed with `PASS=64 WARN=1 ERROR=0 SKIP=0`; the warning was
+  the expected warning-only `warn_silver_trip_anomalies` test
+- `gold_daily_kpis` now builds from `fact_trips`
+- `gold_zone_demand` now builds from `fact_trips` joined to `dim_zone`
+- API Gold query smoke test returned rows from `gold_daily_kpis`
+- `contracts/semantic_catalog.yaml` was intentionally left unchanged, so AI
+  still sees only curated marts
+
+Observed row counts in the local DuckDB warehouse:
+
+- `dim_date`: `62`
+- `dim_service_type`: `2`
+- `dim_zone`: `265`
+- `fact_trips`: `6381430`
+- `gold_daily_kpis`: `124`
+- `gold_zone_demand`: `20727`
+
 ## AI Query Checks
 
 Use `/api/v1/schema` to confirm the semantic catalog before querying.

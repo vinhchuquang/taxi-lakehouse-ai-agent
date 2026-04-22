@@ -13,7 +13,12 @@ Current flow:
 
 ## Current Decision
 
-The MVP keeps Gold as curated aggregate marts:
+The MVP now has two Gold serving layers:
+
+- dimensional models: `dim_date`, `dim_zone`, `dim_service_type`, `fact_trips`
+- curated aggregate marts: `gold_daily_kpis`, `gold_zone_demand`
+
+The aggregate marts remain the AI-preferred serving surface:
 
 - `gold_daily_kpis`
 - `gold_zone_demand`
@@ -22,41 +27,39 @@ This matches the current question patterns: daily KPIs, service type splits, and
 zone-level demand. Aggregate marts keep the AI query surface small, reduce joins,
 and make guardrails easier to reason about.
 
-## Why Not Dim/Fact First
+## Why Dim/Fact Was Added After MVP Verification
 
-Dim/fact modeling is the right direction for a more mature warehouse, but it
-adds early MVP complexity:
+Dim/fact modeling was deferred until the basic MVP flow was verified because it
+adds early complexity:
 
 - More grain, key, and join-policy decisions.
 - Higher risk of Text-to-SQL generating invalid or overly detailed joins.
 - More guardrail complexity than a small set of curated Gold marts.
-- No current need for many fact tables or reusable dimensions.
 
-So the MVP proves ingestion, transforms, data quality, and safe AI querying
-before adding a full dimensional layer.
+After ingestion, transforms, data quality checks, and safe AI querying were
+verified, the Gold dimensional layer was added. The marts still exist so common
+queries do not need to touch fact-level data directly.
 
-## Next Direction
+## Implemented Dimensional Layer
 
-After the MVP is stable, add Gold dimensional models:
+Implemented Gold dimensional models:
 
 - `dim_date`
 - `dim_zone`
 - `dim_service_type`
 - `fact_trips`
 
-`fact_trips` should have one row per valid Silver trip. It should not replace
-aggregate marts immediately. It should become the base for better marts and
-drill-down analysis.
+`fact_trips` has one row per valid Silver trip. It is the base for better marts
+and drill-down analysis, but it does not replace aggregate marts.
 
-Keep `gold_daily_kpis` and `gold_zone_demand` as serving marts. Once the
-dimensional layer is stable, rebuild these marts from `fact_trips` and the
-related dimensions.
+`gold_daily_kpis` and `gold_zone_demand` are serving marts built from
+`fact_trips` and related dimensions.
 
 ## AI Query Rules
 
 - AI may query only Gold objects listed in the semantic catalog.
 - Prefer aggregate marts for common questions.
-- Expose `fact_trips` to AI only after cataloging its grain, metrics, and safe
-  join paths.
+- Keep `fact_trips` out of the AI catalog until its grain, metrics, and safe join
+  paths are cataloged.
 - Never expose Bronze or Silver to AI.
 - Never allow DML, DDL, or external file access.

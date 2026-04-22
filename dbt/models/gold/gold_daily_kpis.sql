@@ -4,5 +4,5 @@ select
     count(*) as trip_count,
     sum(fare_amount) as total_fare_amount,
     avg(trip_distance) as avg_trip_distance
-from {{ ref('silver_trips_unified') }}
+from {{ ref('fact_trips') }}
 group by 1, 2

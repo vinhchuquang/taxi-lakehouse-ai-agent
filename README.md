@@ -98,20 +98,26 @@ taxi-lakehouse/
 
 - `Bronze`: đọc raw parquet/csv từ local mirror tương ứng với object đã upload MinIO.
 - `Silver`: chuẩn hóa Yellow và Green về schema chung.
-- `Gold`: marts phục vụ BI và AI agent; giai đoạn tiếp theo sẽ bổ sung
-  dimensional layer gồm `dim_*` và `fact_*`.
+- `Gold`: dimensional models và marts phục vụ BI, dashboard và AI agent.
+
+Gold dimensional models hiện có:
+
+- `dim_date`
+- `dim_zone`
+- `dim_service_type`
+- `fact_trips`
 
 Gold marts hiện có:
 
 - `gold_daily_kpis`
 - `gold_zone_demand`
 
-Định hướng giai đoạn tiếp theo:
+Định hướng hiện tại:
 
-- thêm `dim_date`, `dim_zone`, `dim_service_type`
-- thêm `fact_trips` ở grain một dòng cho một chuyến taxi hợp lệ sau Silver
 - giữ các Gold marts tổng hợp để phục vụ dashboard và AI query ít rủi ro
-- build lại một số mart từ dimensional layer khi mô hình ổn định
+- `gold_daily_kpis` và `gold_zone_demand` đã build từ dimensional layer
+- chưa expose trực tiếp `fact_trips` cho AI cho tới khi semantic catalog có
+  metadata đầy đủ về grain, metric và join path an toàn
 
 Silver hiện filter các trip có `pickup_at` nằm ngoài tháng partition của source
 file để loại bỏ ngày bất thường.
