@@ -27,6 +27,47 @@
 - The AI query API validates generated SQL with `sqlglot`, only allows read-only `SELECT`
   statements over curated Gold tables, and executes against DuckDB in read-only mode.
 
+## Last Verified MVP State
+
+Last local end-to-end verification: `2026-04-22`.
+
+Verified commands and services:
+
+- `python -m pytest -p no:cacheprovider` passed with `7 passed, 2 skipped`.
+- `docker compose up -d --build` successfully built and started the stack.
+- Airflow, MinIO, API, and Streamlit were reachable on their local ports.
+- API health returned `status=ok` and loaded the semantic catalog.
+- Airflow DAG `taxi_monthly_pipeline` was triggered with:
+
+  ```json
+  {
+    "run_id": "verify_2024_01",
+    "conf": {
+      "year": 2024,
+      "month": 1
+    }
+  }
+  ```
+
+Verified results:
+
+- all DAG tasks finished with `success`
+- Yellow Taxi, Green Taxi, and Taxi Zone Lookup were ingested to MinIO
+- `dbt build` completed Bronze, Silver, and Gold layers
+- `gold_daily_kpis` had `124` rows in the local DuckDB warehouse
+- `gold_zone_demand` had `20727` rows in the local DuckDB warehouse
+- `POST /api/v1/query` returned rows for a valid Gold query
+- Silver access and DDL requests returned HTTP `400`
+- API docs at `http://localhost:8000/docs` returned HTTP `200`
+- Streamlit at `http://localhost:8501` returned HTTP `200`
+
+Notes:
+
+- The local warehouse contained both `2023-12` and `2024-01` data during this
+  verification, so Gold row counts reflected more than one month.
+- Keep `.env` untracked. If a real `OPENAI_API_KEY` is exposed in terminal output
+  or logs, rotate it before sharing the session or repository artifacts.
+
 ## AI Query Checks
 
 Use `/api/v1/schema` to confirm the semantic catalog before querying.

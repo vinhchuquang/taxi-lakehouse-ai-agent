@@ -190,6 +190,9 @@ Trigger DAG với config tháng:
 docker compose exec airflow-scheduler python -c "from airflow.api.common.trigger_dag import trigger_dag; trigger_dag(dag_id='taxi_monthly_pipeline', run_id='e2e_2024_01', conf={'year': 2024, 'month': 1})"
 ```
 
+Trạng thái verify MVP gần nhất được ghi trong `docs/runbook.md`, mục
+`Last Verified MVP State`.
+
 ## Tài Liệu Thêm
 
 - `AGENTS.md`: hướng dẫn cho coding agents
