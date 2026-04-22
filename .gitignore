@@ -12,6 +12,7 @@ Thumbs.db
 # Environment files
 .env
 .env.*
+!.env.example
 
 # Python cache
 __pycache__/
@@ -25,8 +26,6 @@ __pycache__/
 node_modules/
 
 # Local env and data
-.env
-.env.local
 data/
 warehouse/
 logs/

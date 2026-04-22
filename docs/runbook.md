@@ -64,6 +64,47 @@ Recommended demo flow:
 5. Use the auto chart selector and agent checks to show result diagnostics.
 6. Use `Ask AI` to generate SQL from a natural-language question when `OPENAI_API_KEY` is configured.
 
+## MVP Verification Checklist
+
+Use this checklist after changing ingestion, dbt models, API guardrails, or demo flow.
+
+1. Run Python tests:
+
+   ```bash
+   python -m pytest -p no:cacheprovider
+   ```
+
+2. Run dbt build inside the Airflow scheduler container:
+
+   ```bash
+   docker compose exec airflow-scheduler python -c "import sys; sys.path.insert(0, '/opt/airflow/dags'); from lib.dbt_runner import run_dbt_build; run_dbt_build()"
+   ```
+
+3. Confirm critical dbt tests pass:
+   - Bronze Taxi Zone Lookup has unique, non-null `zone_id`.
+   - Silver has valid `service_type`, `source_month`, pickup/dropoff zones, and pickup dates.
+   - Gold marts are not empty and required metrics are populated.
+
+4. Review warning-only anomaly tests:
+   - unusually long trip distances
+   - negative total amounts
+   - dropoff timestamps before pickup timestamps
+   - abnormal Gold metrics
+
+5. Smoke test the API with a Gold query:
+
+   ```json
+   {
+     "question": "Show daily trip counts by service type",
+     "max_rows": 10,
+     "sql": "select service_type, pickup_date, trip_count from gold_daily_kpis order by pickup_date, service_type"
+   }
+   ```
+
+6. Smoke test guardrails by confirming these requests return HTTP `400`:
+   - `select * from silver_trips_unified`
+   - `drop table gold_daily_kpis`
+
 ## MinIO Checks
 
 Open `http://localhost:9001` and log in with `MINIO_ROOT_USER` and

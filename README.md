@@ -98,12 +98,20 @@ taxi-lakehouse/
 
 - `Bronze`: đọc raw parquet/csv từ local mirror tương ứng với object đã upload MinIO.
 - `Silver`: chuẩn hóa Yellow và Green về schema chung.
-- `Gold`: marts phục vụ BI và AI agent.
+- `Gold`: marts phục vụ BI và AI agent; giai đoạn tiếp theo sẽ bổ sung
+  dimensional layer gồm `dim_*` và `fact_*`.
 
 Gold marts hiện có:
 
 - `gold_daily_kpis`
 - `gold_zone_demand`
+
+Định hướng giai đoạn tiếp theo:
+
+- thêm `dim_date`, `dim_zone`, `dim_service_type`
+- thêm `fact_trips` ở grain một dòng cho một chuyến taxi hợp lệ sau Silver
+- giữ các Gold marts tổng hợp để phục vụ dashboard và AI query ít rủi ro
+- build lại một số mart từ dimensional layer khi mô hình ổn định
 
 Silver hiện filter các trip có `pickup_at` nằm ngoài tháng partition của source
 file để loại bỏ ngày bất thường.
@@ -187,5 +195,7 @@ docker compose exec airflow-scheduler python -c "from airflow.api.common.trigger
 - `AGENTS.md`: hướng dẫn cho coding agents
 - `docs/architecture.md`: kiến trúc tổng quan
 - `docs/data-contracts.md`: hợp đồng dữ liệu
+- `docs/development-roadmap.md`: hướng phát triển theo giai đoạn
+- `docs/modeling-decisions.md`: quyết định mô hình dữ liệu và định hướng dim/fact
 - `docs/source-notes.md`: ghi chú nguồn dữ liệu
 - `docs/runbook.md`: hướng dẫn vận hành local

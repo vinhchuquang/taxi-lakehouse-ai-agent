@@ -1,4 +1,5 @@
 from datetime import datetime
+import hashlib
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 import sys
@@ -101,3 +102,29 @@ def test_upload_local_file_to_minio_creates_bucket_and_uploads(tmp_path) -> None
     assert result["minio_uri"] == (
         "s3://taxi-lakehouse/bronze/yellow_taxi/year=2024/month=01/sample.parquet"
     )
+    assert result["file_size_bytes"] == "6"
+    assert result["sha256"] == hashlib.sha256(b"sample").hexdigest()
+    assert "ingested_at_utc" in result
+
+
+def test_upload_local_file_to_minio_rejects_empty_file(tmp_path) -> None:
+    module = load_tlc_ingestion_module()
+    local_file = tmp_path / "empty.parquet"
+    local_file.write_bytes(b"")
+
+    try:
+        module.upload_local_file_to_minio(
+            manifest={
+                "dataset": "yellow",
+                "local_path": str(local_file),
+                "bronze_object_key": "bronze/yellow_taxi/year=2024/month=01/empty.parquet",
+            },
+            minio_endpoint="http://minio:9000",
+            minio_bucket="taxi-lakehouse",
+            minio_access_key="minioadmin",
+            minio_secret_key="minioadmin123",
+        )
+    except ValueError as exc:
+        assert "empty" in str(exc)
+    else:
+        raise AssertionError("Expected empty files to be rejected")

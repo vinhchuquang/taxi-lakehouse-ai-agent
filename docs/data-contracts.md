@@ -54,6 +54,10 @@ Rules:
 - prefer explicit metrics and dimensions
 - keep `service_type` when combining Yellow and Green
 - use only business-safe, curated columns for AI access
+- next phase may add `dim_date`, `dim_zone`, `dim_service_type`, and `fact_trips`
+  as Gold dimensional models
+- keep aggregate marts as the preferred serving surface for common BI and AI
+  questions
 
 ## AI Query Contract
 

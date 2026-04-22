@@ -7,18 +7,28 @@ models:
     description: Monthly Green Taxi parquet files landed in the Bronze layer.
   - name: bronze_taxi_zone_lookup
     description: Taxi zone lookup reference file from the TLC source.
+    columns:
+      - name: zone_id
+        tests:
+          - not_null
+          - unique
   - name: silver_trips_unified
     description: Unified and cleaned Yellow and Green taxi trip records.
     columns:
       - name: service_type
         tests:
           - not_null
+          - accepted_values:
+              values: ["yellow_taxi", "green_taxi"]
       - name: source_year
         tests:
           - not_null
       - name: source_month
         tests:
           - not_null
+          - accepted_values:
+              values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+              quote: false
       - name: pickup_date
         tests:
           - not_null
@@ -34,12 +44,46 @@ models:
       - name: service_type
         tests:
           - not_null
+          - accepted_values:
+              values: ["yellow_taxi", "green_taxi"]
       - name: pickup_date
+        tests:
+          - not_null
+      - name: trip_count
+        tests:
+          - not_null
+      - name: total_fare_amount
+        tests:
+          - not_null
+      - name: avg_trip_distance
         tests:
           - not_null
   - name: gold_zone_demand
     description: Daily demand and revenue metrics by pickup taxi zone.
     columns:
+      - name: service_type
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["yellow_taxi", "green_taxi"]
+      - name: pickup_date
+        tests:
+          - not_null
       - name: zone_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('bronze_taxi_zone_lookup')
+              field: zone_id
+      - name: borough
+        tests:
+          - not_null
+      - name: zone_name
+        tests:
+          - not_null
+      - name: trip_count
+        tests:
+          - not_null
+      - name: total_amount
         tests:
           - not_null

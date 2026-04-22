@@ -53,6 +53,13 @@ agent framework unless the user explicitly asks for that change.
 - Prefer adding `service_type` to marts where Yellow and Green are combined.
 - Keep monthly partition semantics visible in paths and pipeline manifests.
 - Keep Yellow and Green as the primary fact sources; Taxi Zone Lookup is only for enrichment.
+- For the current MVP, keep `gold_daily_kpis` and `gold_zone_demand` as curated
+  serving marts.
+- For the next phase, dimensional models are welcome in Gold: `dim_date`,
+  `dim_zone`, `dim_service_type`, and `fact_trips`.
+- Do not expose `fact_trips` broadly to the AI layer until the semantic catalog
+  describes its grain, metrics, and allowed join paths.
+- Keep aggregate marts as the preferred AI serving surface for common questions.
 
 ## Coding Priorities
 
@@ -80,6 +87,9 @@ When editing this repo, prioritize work in this order:
 - `services/api/` contains the query API
 - `contracts/` contains semantic metadata for the AI layer
 - `docs/` contains project context for humans and agents
+- `docs/development-roadmap.md` contains the phased roadmap
+- `docs/modeling-decisions.md` explains why marts come before dim/fact
+- `docs/codex-agent-playbook.md` contains the repo-specific agent workflow
 
 ## Working Style For Agents
 
@@ -87,3 +97,20 @@ When editing this repo, prioritize work in this order:
 - do not introduce extra frameworks without clear value
 - prefer local-first, testable implementations
 - preserve the project narrative: lakehouse first, AI agent on top
+- before changing architecture, read `docs/modeling-decisions.md`
+- before adding tables available to AI, update `contracts/semantic_catalog.yaml`
+  and corresponding guardrail/API tests
+- when changing dbt models, update `dbt/models/schema.yml` tests and docs in the
+  same change
+- when changing ingestion paths or manifests, update `docs/runbook.md` and
+  ingestion tests
+
+## Suggested Verification
+
+Choose the smallest verification that covers the changed area:
+
+- Python/unit changes: `python -m pytest -p no:cacheprovider`
+- dbt model changes: run dbt build through the Airflow scheduler container as
+  documented in `docs/runbook.md`
+- API guardrail changes: run SQL guardrail and API smoke tests
+- docs-only changes: review Markdown links and terminology consistency

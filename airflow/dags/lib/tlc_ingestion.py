@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import logging
+import hashlib
 from dataclasses import dataclass, asdict
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from shutil import copyfileobj
 from urllib.request import Request, urlopen
@@ -94,6 +95,26 @@ def resolve_local_path(local_data_root: str, local_relative_path: str) -> Path:
     return Path(local_data_root).joinpath(local_relative_path)
 
 
+def compute_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as source_file:
+        for chunk in iter(lambda: source_file.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def describe_local_file(path: Path) -> dict[str, str]:
+    file_size_bytes = path.stat().st_size
+    if file_size_bytes <= 0:
+        raise ValueError(f"Downloaded file is empty: {path}")
+
+    return {
+        "local_path": str(path),
+        "file_size_bytes": str(file_size_bytes),
+        "sha256": compute_sha256(path),
+    }
+
+
 def download_file_to_local(
     manifest: dict[str, str],
     local_data_root: str,
@@ -117,18 +138,19 @@ def download_file_to_local(
         with destination_path.open("wb") as destination_file:
             copyfileobj(response, destination_file)
 
-    file_size_bytes = destination_path.stat().st_size
+    file_metadata = describe_local_file(destination_path)
     LOGGER.info(
-        "Downloaded dataset=%s to %s (%s bytes)",
+        "Downloaded dataset=%s to %s (%s bytes, sha256=%s)",
         manifest["dataset"],
         destination_path,
-        file_size_bytes,
+        file_metadata["file_size_bytes"],
+        file_metadata["sha256"],
     )
 
     return {
         **manifest,
-        "local_path": str(destination_path),
-        "file_size_bytes": str(file_size_bytes),
+        **file_metadata,
+        "downloaded_at_utc": datetime.now(timezone.utc).isoformat(),
     }
 
 
@@ -142,6 +164,7 @@ def upload_local_file_to_minio(
     local_path = Path(manifest["local_path"])
     if not local_path.exists():
         raise FileNotFoundError(f"Local file does not exist: {local_path}")
+    file_metadata = describe_local_file(local_path)
 
     import boto3
     from botocore.client import Config
@@ -172,22 +195,23 @@ def upload_local_file_to_minio(
         object_key,
     )
     client.upload_file(str(local_path), minio_bucket, object_key)
-    file_size_bytes = local_path.stat().st_size
     LOGGER.info(
-        "Uploaded dataset=%s to s3://%s/%s (%s bytes)",
+        "Uploaded dataset=%s to s3://%s/%s (%s bytes, sha256=%s)",
         manifest["dataset"],
         minio_bucket,
         object_key,
-        file_size_bytes,
+        file_metadata["file_size_bytes"],
+        file_metadata["sha256"],
     )
 
     return {
         **manifest,
+        **file_metadata,
         "minio_bucket": minio_bucket,
         "minio_endpoint": minio_endpoint,
         "minio_object_key": object_key,
         "minio_uri": f"s3://{minio_bucket}/{object_key}",
-        "file_size_bytes": str(file_size_bytes),
+        "ingested_at_utc": datetime.now(timezone.utc).isoformat(),
     }
 
 

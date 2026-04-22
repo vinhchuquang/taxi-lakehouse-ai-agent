@@ -29,3 +29,14 @@ datasets and only adds Taxi Zone Lookup as a supporting dimension source.
 
 The AI layer must not query raw or partially cleaned data. It should only
 operate over curated `Gold` tables and semantic metadata.
+
+## Modeling Direction
+
+Trong MVP, Gold đang ưu tiên curated aggregate marts như `gold_daily_kpis` và
+`gold_zone_demand`. Cách này giúp dashboard và AI query trả lời các câu hỏi phổ
+biến mà không phải tự join nhiều bảng.
+
+Giai đoạn tiếp theo sẽ bổ sung dimensional layer trong Gold, gồm các model như
+`dim_date`, `dim_zone`, `dim_service_type` và `fact_trips`. Các marts hiện tại
+vẫn được giữ làm serving layer, sau đó có thể build lại từ `fact_trips` khi
+dimensional layer ổn định.
