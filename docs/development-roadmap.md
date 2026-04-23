@@ -36,12 +36,14 @@ Gold dim/fact models:
 - `dim_zone`: Taxi Zone Lookup attributes such as zone, borough, and service
   zone.
 - `dim_service_type`: `yellow_taxi`, `green_taxi`.
+- `dim_vendor`: TLC vendor code lookup.
+- `dim_payment_type`: TLC payment code lookup.
 - `fact_trips`: trip-level fact from `silver_trips_unified`.
 
 `fact_trips` grain should be one valid Silver trip per row. Main join keys are
-`pickup_date`, `service_type`, `pickup_zone_id`, and `dropoff_zone_id`. Base
-metrics include `trip_distance`, `fare_amount`, `total_amount`, and
-`passenger_count`.
+`pickup_date`, `service_type`, `vendor_id`, `payment_type`, `pickup_zone_id`,
+and `dropoff_zone_id`. Base metrics include `trip_distance`, `fare_amount`,
+`total_amount`, and `passenger_count`.
 
 ## Phase 4: Build Marts From Dim/Fact
 

@@ -15,7 +15,8 @@ Current flow:
 
 The MVP now has two Gold serving layers:
 
-- dimensional models: `dim_date`, `dim_zone`, `dim_service_type`, `fact_trips`
+- dimensional models: `dim_date`, `dim_zone`, `dim_service_type`,
+  `dim_vendor`, `dim_payment_type`, `fact_trips`
 - curated aggregate marts: `gold_daily_kpis`, `gold_zone_demand`
 
 The aggregate marts remain the AI-preferred serving surface:
@@ -47,10 +48,13 @@ Implemented Gold dimensional models:
 - `dim_date`
 - `dim_zone`
 - `dim_service_type`
+- `dim_vendor`
+- `dim_payment_type`
 - `fact_trips`
 
 `fact_trips` has one row per valid Silver trip. It is the base for better marts
-and drill-down analysis, but it does not replace aggregate marts.
+and drill-down analysis, with join keys for date, service type, vendor, payment
+type, pickup zone, and dropoff zone. It does not replace aggregate marts.
 
 `gold_daily_kpis` and `gold_zone_demand` are serving marts built from
 `fact_trips` and related dimensions.

@@ -70,6 +70,26 @@ models:
       - name: service_type_name
         tests:
           - not_null
+  - name: dim_vendor
+    description: Vendor dimension mapping TLC vendor codes to provider names.
+    columns:
+      - name: vendor_id
+        tests:
+          - not_null
+          - unique
+      - name: vendor_name
+        tests:
+          - not_null
+  - name: dim_payment_type
+    description: Payment type dimension mapping TLC payment codes to readable labels.
+    columns:
+      - name: payment_type
+        tests:
+          - not_null
+          - unique
+      - name: payment_type_name
+        tests:
+          - not_null
   - name: dim_zone
     description: Taxi zone dimension sourced from the TLC Taxi Zone Lookup reference file.
     columns:
@@ -106,6 +126,13 @@ models:
       - name: dropoff_at
         tests:
           - not_null
+      - name: vendor_id
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_vendor')
+                field: vendor_id
       - name: pickup_zone_id
         tests:
           - not_null
@@ -129,6 +156,12 @@ models:
       - name: total_amount
         tests:
           - not_null
+      - name: payment_type
+        tests:
+          - relationships:
+              arguments:
+                to: ref('dim_payment_type')
+                field: payment_type
   - name: gold_daily_kpis
     description: Daily KPI mart split by taxi service type, built from fact_trips.
     columns:

@@ -79,24 +79,27 @@ Notes:
 
 ## Last Verified Dimensional Layer State
 
-Last local Gold dimensional verification: `2026-04-22`.
+Last local Gold dimensional verification: `2026-04-23`.
 
 Implemented models:
 
 - `dim_date`
 - `dim_zone`
 - `dim_service_type`
+- `dim_vendor`
+- `dim_payment_type`
 - `fact_trips`
 
 Verification:
 
 - services were started with `docker compose up -d`; no rebuild was needed
 - `python -m pytest -p no:cacheprovider` passed with `7 passed, 2 skipped`
-- Gold dbt build passed with `PASS=50 WARN=0 ERROR=0 SKIP=0`
-- full dbt build passed with `PASS=64 WARN=1 ERROR=0 SKIP=0`; the warning was
+- full dbt build passed with `PASS=75 WARN=1 ERROR=0 SKIP=0`; the warning was
   the expected warning-only `warn_silver_trip_anomalies` test
 - `gold_daily_kpis` now builds from `fact_trips`
 - `gold_zone_demand` now builds from `fact_trips` joined to `dim_zone`
+- `dim_vendor` and `dim_payment_type` build from `silver_trips_unified`
+- `fact_trips` has relationship tests to `dim_vendor` and `dim_payment_type`
 - API Gold query smoke test returned rows from `gold_daily_kpis`
 - `contracts/semantic_catalog.yaml` was intentionally left unchanged, so AI
   still sees only curated marts
@@ -105,6 +108,8 @@ Observed row counts in the local DuckDB warehouse:
 
 - `dim_date`: `62`
 - `dim_service_type`: `2`
+- `dim_vendor`: `3`
+- `dim_payment_type`: `6`
 - `dim_zone`: `265`
 - `fact_trips`: `6381430`
 - `gold_daily_kpis`: `124`
