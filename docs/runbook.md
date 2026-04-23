@@ -21,7 +21,8 @@
 
 ## Expected Local Volumes
 
-- `data/` for Bronze and local service data
+- `data/` for ingestion download/cache files and local service data
+- `data/minio/` for MinIO object storage backing files
 - `logs/` for Airflow logs
 - `warehouse/` for DuckDB database files
 
@@ -31,6 +32,9 @@
 - Taxi Zone Lookup is ingested separately as reference data for enrichment.
 - Ingestion downloads each source file to the local data volume and uploads the
   same object key into MinIO bucket `taxi-lakehouse`.
+- MinIO is the Bronze source of truth for dbt. Bronze dbt models read
+  `s3://taxi-lakehouse/...` paths through DuckDB `httpfs`; local `data/` files
+  are cache/fallback files.
 - Airflow runs `dbt build` inside the scheduler/webserver image using `dbt-duckdb`.
 - The local `Bronze -> Silver -> Gold` path can be validated with `dbt build`.
 - The AI query API validates generated SQL with `sqlglot`, only allows read-only `SELECT`
@@ -134,6 +138,30 @@ Verification for this docs-focused update:
   `docs/development-roadmap.md`, `docs/modeling-decisions.md`, and this runbook.
 - `python -m pytest -p no:cacheprovider` passed with `9 passed, 2 skipped`.
 
+## Last Verified Bronze Storage State
+
+Last Bronze storage verification: `2026-04-23`.
+
+Implemented behavior:
+
+- Ingestion still downloads TLC files to local `data/` as a cache before upload.
+- Ingestion uploads the files to MinIO bucket `taxi-lakehouse` with stable
+  Bronze object keys.
+- dbt Bronze models now default to reading from MinIO `s3://taxi-lakehouse/...`
+  paths instead of local cache paths.
+- dbt config runs a DuckDB `httpfs` setup macro before builds to create MinIO
+  S3 access.
+
+Verification for this update:
+
+- `python -m pytest -p no:cacheprovider` passed with `11 passed, 2 skipped`.
+- `docker compose up -d minio` started MinIO for dbt S3 reads.
+- Full dbt build through `airflow-scheduler` passed with
+  `PASS=76 WARN=1 ERROR=0 SKIP=0`; the warning was the expected warning-only
+  `warn_silver_trip_anomalies` test.
+- The dbt `on-run-start` hook `configure_minio_access` completed successfully,
+  confirming DuckDB could configure `httpfs`/S3 access before Bronze model reads.
+
 ## AI Query Checks
 
 Use `/api/v1/schema` to confirm the semantic catalog before querying.
@@ -234,6 +262,12 @@ After a successful ingestion run, bucket `taxi-lakehouse` should contain:
 - `bronze/yellow_taxi/year=YYYY/month=MM/yellow_tripdata_YYYY-MM.parquet`
 - `bronze/green_taxi/year=YYYY/month=MM/green_tripdata_YYYY-MM.parquet`
 - `reference/taxi_zone_lookup/taxi_zone_lookup.csv`
+
+dbt Bronze reads these objects through S3-compatible paths:
+
+- `s3://taxi-lakehouse/bronze/yellow_taxi/**/*.parquet`
+- `s3://taxi-lakehouse/bronze/green_taxi/**/*.parquet`
+- `s3://taxi-lakehouse/reference/taxi_zone_lookup/taxi_zone_lookup.csv`
 
 ## Airflow End-to-End Check
 

@@ -59,6 +59,9 @@ agent framework unless the user explicitly asks for that change.
 ## Data Modeling Rules
 
 - Bronze stores raw source files with minimal mutation.
+- MinIO is the Bronze object-storage source of truth. Local `data/` files are
+  download/cache files for ingestion and development fallback, not the primary
+  dbt Bronze source.
 - Silver standardizes schema across Yellow and Green datasets.
 - Gold contains the star schema and curated aggregate marts for BI and AI
   querying.
@@ -125,6 +128,8 @@ When editing this repo, prioritize work in this order:
   same change
 - when changing ingestion paths or manifests, update `docs/runbook.md` and
   ingestion tests
+- when changing Bronze storage or dbt read paths, update `docs/data-contracts.md`,
+  `docs/runbook.md`, and tests that assert the expected storage source
 - prefer `docker compose up -d` for already-built local services; use
   `docker compose up -d --build` only after Dockerfile, image dependency,
   requirements, or compose changes, or when a rebuild is needed to pick up code

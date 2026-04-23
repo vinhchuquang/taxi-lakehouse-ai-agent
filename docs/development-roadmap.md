@@ -11,6 +11,8 @@ controlled querying over the Gold star schema.
   production auth until the current MVP and AI star-schema path are stable.
 - Gold is the serving layer. It contains both the star schema and aggregate
   marts.
+- MinIO is the Bronze object-storage source of truth. Local `data/` files are
+  ingestion cache/fallback files.
 - Aggregate marts are the fast path for common questions. They do not replace
   the Gold star schema.
 - AI may query `fact_trips` and dimensions only after semantic metadata and
@@ -22,6 +24,7 @@ Status: completed for the MVP.
 
 - Harden monthly ingestion for Yellow and Green.
 - Keep monthly partition semantics in paths, manifests, and dbt models.
+- Use MinIO as the Bronze source of truth for dbt reads.
 - Treat Taxi Zone Lookup as enrichment reference data.
 - Make the `Bronze -> Silver -> Gold` flow repeatable through Airflow and dbt.
 
@@ -74,6 +77,23 @@ Completed:
   is controlled AI querying over `fact_trips` and `dim_*`.
 - Added session handoff rules: after completing a phase, update the roadmap,
   verification notes, caveats, and next step.
+
+Next step: Phase 6, Star Schema Semantic Catalog.
+
+## Phase 5B: Move Bronze Reads To MinIO
+
+Status: completed on 2026-04-23.
+
+Completed:
+
+- Kept local `data/` as ingestion download/cache storage.
+- Made dbt Bronze models read from MinIO `s3://taxi-lakehouse/...` paths by
+  default.
+- Added DuckDB `httpfs`/S3 setup for MinIO before dbt runs.
+- Updated contracts, architecture, runbook, and agent guidance to state that
+  MinIO is the Bronze source of truth.
+- Verified full dbt build through Airflow scheduler with MinIO started:
+  `PASS=76 WARN=1 ERROR=0 SKIP=0`.
 
 Next step: Phase 6, Star Schema Semantic Catalog.
 

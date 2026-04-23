@@ -10,6 +10,9 @@ macro-paths: ["macros"]
 target-path: "target"
 clean-targets: ["target", "dbt_packages"]
 
+on-run-start:
+  - "{{ configure_minio_access() }}"
+
 models:
   taxi_lakehouse:
     silver:

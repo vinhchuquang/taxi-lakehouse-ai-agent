@@ -9,10 +9,19 @@
 ## Bronze Contract
 
 - Preserve source files with minimal mutation.
+- Store source files in MinIO as the Bronze object-storage source of truth.
+- Keep local `data/` files only as ingestion download/cache files or development
+  fallback, not as the primary dbt Bronze source.
 - Store files in partitioned paths by service type, year, and month.
 - Keep naming close to the original TLC source names.
 
-Expected local paths:
+Expected MinIO object paths:
+
+- `s3://taxi-lakehouse/bronze/yellow_taxi/year=YYYY/month=MM/...`
+- `s3://taxi-lakehouse/bronze/green_taxi/year=YYYY/month=MM/...`
+- `s3://taxi-lakehouse/reference/taxi_zone_lookup/taxi_zone_lookup.csv`
+
+Expected local cache paths:
 
 - `data/bronze/yellow_taxi/year=YYYY/month=MM/...`
 - `data/bronze/green_taxi/year=YYYY/month=MM/...`

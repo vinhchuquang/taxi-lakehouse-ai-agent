@@ -8,35 +8,47 @@ read-only AI query interface.
 ## Main Components
 
 - `Airflow` orchestrates monthly ingestion and downstream transforms.
-- `MinIO` stores raw Bronze files as object storage.
+- `MinIO` stores raw Bronze files as S3-compatible object storage.
 - `dbt` models the transformation layers.
 - `DuckDB` serves local analytics and query execution.
 - `FastAPI` exposes schema and query endpoints to the AI layer.
+- `Streamlit` provides a local demo UI.
 
 ## Data Flow
 
-1. Download monthly TLC parquet files for `Yellow Taxi` and `Green Taxi`.
-2. Download `Taxi Zone Lookup` as reference data.
-3. Land raw files in `Bronze` and reference data in a stable local path.
-4. Standardize both trip datasets into a shared `Silver` model and enrich with lookup data when needed.
-5. Build curated marts in `Gold`.
-6. Query `Gold` through BI tools and the AI agent.
+1. Airflow builds monthly manifests for Yellow Taxi, Green Taxi, and Taxi Zone
+   Lookup.
+2. Ingestion downloads each source file to local `data/` as a temporary cache.
+3. Ingestion uploads the same file to MinIO under stable Bronze object keys.
+4. dbt Bronze models read from MinIO `s3://taxi-lakehouse/...` paths using
+   DuckDB `httpfs`.
+5. dbt builds Silver normalized trip data and Gold star-schema models/marts in
+   DuckDB.
+6. FastAPI and Streamlit query curated Gold data through read-only DuckDB access.
 
-The current architecture phase keeps Yellow and Green as the primary trip
-datasets and only adds Taxi Zone Lookup as a supporting dimension source.
+## Storage Roles
 
-## Serving Principle
-
-The AI layer must not query raw or partially cleaned data. It should only
-operate over curated `Gold` tables and semantic metadata.
+- MinIO is the Bronze source of truth.
+- Local `data/` is a download/cache location for ingestion and development
+  fallback.
+- DuckDB stores transformed Silver and Gold analytical tables in
+  `warehouse/analytics.duckdb`.
 
 ## Modeling Direction
 
-Trong MVP, Gold đang ưu tiên curated aggregate marts như `gold_daily_kpis` và
-`gold_zone_demand`. Cách này giúp dashboard và AI query trả lời các câu hỏi phổ
-biến mà không phải tự join nhiều bảng.
+Gold contains both:
 
-Giai đoạn tiếp theo sẽ bổ sung dimensional layer trong Gold, gồm các model như
-`dim_date`, `dim_zone`, `dim_service_type` và `fact_trips`. Các marts hiện tại
-vẫn được giữ làm serving layer, sau đó có thể build lại từ `fact_trips` khi
-dimensional layer ổn định.
+- a star schema: `fact_trips`, `dim_date`, `dim_zone`, `dim_service_type`,
+  `dim_vendor`, and `dim_payment_type`
+- aggregate marts: `gold_daily_kpis` and `gold_zone_demand`
+
+Aggregate marts are the fast path for common dashboard and AI questions. The
+star schema is the flexible analytical foundation. The next AI direction is
+controlled querying over the star schema after semantic metadata and guardrails
+describe allowed columns and joins.
+
+## Serving Principle
+
+The AI layer must not query raw Bronze or partially cleaned Silver data. It
+should operate over curated Gold tables and semantic metadata, with SQL validated
+before execution.
