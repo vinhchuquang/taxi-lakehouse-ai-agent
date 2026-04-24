@@ -57,6 +57,16 @@ def build_lookup_url() -> str:
     return f"{TLC_CLOUDFRONT_BASE_URL}/misc/taxi_zone_lookup.csv"
 
 
+def month_start_with_lag(run_date: datetime, lag_months: int) -> datetime:
+    if lag_months < 0:
+        raise ValueError("lag_months must be non-negative")
+
+    month_index = run_date.year * 12 + run_date.month - 1 - lag_months
+    year = month_index // 12
+    month = month_index % 12 + 1
+    return datetime(year, month, 1)
+
+
 def build_trip_manifest(dataset: str, run_date: datetime) -> TripDataManifest:
     if dataset not in TRIP_DATASETS:
         raise ValueError(f"Unsupported dataset: {dataset}")

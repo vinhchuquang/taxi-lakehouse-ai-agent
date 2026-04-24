@@ -9,10 +9,16 @@ from airflow.decorators import task
 from airflow.operators.empty import EmptyOperator
 
 from lib.dbt_runner import run_dbt_build
-from lib.tlc_ingestion import build_lookup_manifest, build_trip_manifest, ingest_file_to_minio
+from lib.tlc_ingestion import (
+    build_lookup_manifest,
+    build_trip_manifest,
+    ingest_file_to_minio,
+    month_start_with_lag,
+)
 
 LOCAL_DATA_ROOT = os.getenv("LOCAL_DATA_ROOT", "/opt/airflow/data")
 TLC_DOWNLOAD_TIMEOUT_SECONDS = int(os.getenv("TLC_DOWNLOAD_TIMEOUT_SECONDS", "300"))
+TLC_PUBLICATION_LAG_MONTHS = int(os.getenv("TLC_PUBLICATION_LAG_MONTHS", "2"))
 MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "http://minio:9000")
 MINIO_BUCKET = os.getenv("MINIO_BUCKET", "taxi-lakehouse")
 MINIO_ROOT_USER = os.getenv("MINIO_ROOT_USER", "minioadmin")
@@ -26,7 +32,7 @@ def resolve_run_date(data_interval_start, dag_run=None) -> datetime:
         month = dag_run.conf.get("month")
         if year and month:
             return datetime(int(year), int(month), 1)
-    return data_interval_start
+    return month_start_with_lag(data_interval_start, TLC_PUBLICATION_LAG_MONTHS)
 
 
 with DAG(

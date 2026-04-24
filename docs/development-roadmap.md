@@ -292,6 +292,33 @@ Verification:
   - blocked `select * from fact_trips`
 - Streamlit demo returned HTTP `200`.
 
+## Phase 10B: TLC Publication Lag For Monthly Ingestion
+
+Status: completed on 2026-04-24.
+
+Goal: prevent scheduled monthly ingestion from requesting TLC files that have
+not been published yet.
+
+Completed:
+
+- Added `TLC_PUBLICATION_LAG_MONTHS`, default `2`, for scheduled Airflow runs.
+- Scheduled runs now build trip manifests from `data_interval_start` minus the
+  publication lag.
+- Manual DAG triggers with explicit `year` and `month` still ingest the exact
+  requested month.
+- Updated ingestion tests, `.env.example`, README, runbook, and agent playbook.
+
+Verification:
+
+- `python -m pytest -p no:cacheprovider tests/test_tlc_ingestion.py` passed
+  with `8 passed`.
+- Host-local `python -m pytest -p no:cacheprovider` passed with `15 passed,
+  2 skipped`.
+- Airflow-container check confirmed scheduled interval `2026-04-01` resolves to
+  `2026-02-01`, while manual `{year: 2024, month: 1}` resolves to `2024-01-01`.
+- Airflow DAG details confirmed `taxi_monthly_pipeline` remains active,
+  unpaused, and scheduled monthly.
+
 ## Documentation And Handoff Rule
 
 After each meaningful phase or working session, update the durable project

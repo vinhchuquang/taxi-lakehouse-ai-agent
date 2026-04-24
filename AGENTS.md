@@ -90,6 +90,9 @@ agent framework unless the user explicitly asks for that change.
 - The AI layer must only query `Gold` tables or views.
 - Prefer adding `service_type` to marts where Yellow and Green are combined.
 - Keep monthly partition semantics visible in paths and pipeline manifests.
+- Scheduled Airflow ingestion uses `TLC_PUBLICATION_LAG_MONTHS` to account for
+  TLC's delayed monthly data publication; default is `2` months. Manual
+  `year/month` DAG triggers override this lag.
 - Keep Yellow and Green as the primary fact sources; Taxi Zone Lookup is only for enrichment.
 - For the current MVP, keep `gold_daily_kpis` and `gold_zone_demand` as curated
   serving marts.

@@ -35,6 +35,33 @@ def test_build_trip_manifest_for_green() -> None:
     )
 
 
+def test_month_start_with_lag_handles_same_year() -> None:
+    module = load_tlc_ingestion_module()
+
+    run_date = module.month_start_with_lag(datetime(2026, 4, 24), lag_months=2)
+
+    assert run_date == datetime(2026, 2, 1)
+
+
+def test_month_start_with_lag_handles_year_boundary() -> None:
+    module = load_tlc_ingestion_module()
+
+    run_date = module.month_start_with_lag(datetime(2026, 1, 1), lag_months=2)
+
+    assert run_date == datetime(2025, 11, 1)
+
+
+def test_month_start_with_lag_rejects_negative_lag() -> None:
+    module = load_tlc_ingestion_module()
+
+    try:
+        module.month_start_with_lag(datetime(2026, 4, 1), lag_months=-1)
+    except ValueError as exc:
+        assert "non-negative" in str(exc)
+    else:
+        raise AssertionError("Expected negative lag to be rejected")
+
+
 def test_build_lookup_manifest() -> None:
     module = load_tlc_ingestion_module()
     manifest = module.build_lookup_manifest().to_dict()
