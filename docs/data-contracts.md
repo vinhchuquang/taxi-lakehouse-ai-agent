@@ -74,10 +74,11 @@ Rules:
 - use only business-safe, curated columns for AI access
 - `fact_trips` grain is one valid Silver trip per row
 - keep aggregate marts as the fast path for common BI and AI questions
-- do not expose `fact_trips` directly to AI until semantic metadata describes
-  grain, metrics, columns, keys, and safe join paths
-- expose aggregate Gold marts to AI through `contracts/semantic_catalog.yaml`
-  with table type, grain, dimensions, metrics, filters, and preferred questions
+- expose Gold marts, `fact_trips`, and dimensions to AI through
+  `contracts/semantic_catalog.yaml` with table type, grain, dimensions, metrics,
+  filters, keys, and safe join paths
+- detailed Gold tables such as `fact_trips` require explicit columns and
+  cataloged joins; wildcard `SELECT *` is rejected
 
 ## AI Query Contract
 

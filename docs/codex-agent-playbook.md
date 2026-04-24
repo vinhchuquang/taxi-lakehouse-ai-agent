@@ -46,9 +46,9 @@ the repo first.
 - Aggregate marts `gold_daily_kpis` and `gold_zone_demand` are built from the
   star schema. They are a fast/safe path for common questions, not a replacement
   for the star schema.
-- The current roadmap direction is controlled AI querying over the Gold star
-  schema. Semantic metadata, column/table guardrails, join guardrails, and
-  prompt planning are implemented; controlled fact/dim execution remains next.
+- Controlled AI querying over the Gold star schema is implemented for the
+  current MVP. Semantic metadata, column/table guardrails, join guardrails,
+  prompt planning, and fact/dim execution are in place.
 
 ## Session Closeout
 
@@ -137,10 +137,10 @@ Use this direction when maintaining dimensional models:
 - `fact_trips`: from `silver_trips_unified`, with base metrics such as
   `trip_distance`, `fare_amount`, `total_amount`, and `passenger_count`.
 
-Do not assume `fact_trips` should be avoided forever. The intended next step is
-controlled AI querying over the star schema after semantic metadata, column
-guardrails, and join guardrails are in place. If a question becomes very common,
-a Gold aggregate mart can still be added as a fast path.
+`fact_trips` is now queryable through controlled API access. Keep aggregate
+marts as the fast path for common questions, and use fact/dim queries only
+through semantic metadata, cataloged columns, and allowed joins. If a question
+becomes very common, a Gold aggregate mart can still be added as a fast path.
 
 ## AI Query Layer
 
@@ -152,9 +152,9 @@ a Gold aggregate mart can still be added as a fast path.
   aliases, wildcard restrictions for detailed Gold tables, allowed join paths,
   and query limits.
 - `services/api/app/text_to_sql.py` renders semantic metadata into the LLM prompt.
-- Runtime prompt rendering includes only execution-enabled tables. Use
-  `include_disabled=True` only for planning/tests/future controlled exposure,
-  not for current `/api/v1/query` execution.
+- Runtime prompt rendering includes execution-enabled tables. Use
+  `include_disabled=True` only for planning/tests if a future phase catalogs
+  tables before exposing them.
 - `services/api/app/catalog.py` loads catalog metadata for the API and prompt.
 - When exposing new tables to AI, add clear field descriptions.
 - Before exposing `fact_trips` or any `dim_*` table, catalog table type, grain,

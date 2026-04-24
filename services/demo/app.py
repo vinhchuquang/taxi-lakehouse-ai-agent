@@ -12,7 +12,17 @@ API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000").rstrip("/")
 DEFAULT_SQL = """select service_type, pickup_date, trip_count
 from gold_daily_kpis
 order by pickup_date, service_type"""
+STAR_SCHEMA_SQL = """select
+    v.vendor_name,
+    count(*) as trip_count,
+    sum(f.total_amount) as total_amount
+from fact_trips as f
+join dim_vendor as v
+    on f.vendor_id = v.vendor_id
+group by v.vendor_name
+order by trip_count desc"""
 GUARDRAIL_SQL = "select * from silver_trips_unified"
+FACT_WILDCARD_SQL = "select * from fact_trips"
 DATE_HINTS = ("date", "day", "month", "year", "_at")
 METRIC_HINTS = ("count", "amount", "fare", "distance", "avg", "total", "sum")
 
@@ -200,7 +210,7 @@ def render_schema(schema: dict[str, Any] | None) -> None:
 
 
 st.title("Taxi Lakehouse AI Agent")
-st.caption("Read-only natural language and SQL demo over curated Gold marts.")
+st.caption("Read-only natural language and SQL demo over curated Gold marts and controlled star schema.")
 
 health, health_error = get_json("/healthz")
 schema, schema_error = get_json("/api/v1/schema")
@@ -224,8 +234,8 @@ with st.sidebar:
     max_rows = st.slider("Max rows", min_value=1, max_value=1000, value=25, step=1)
 
 
-tab_ai, tab_sql, tab_guardrails, tab_schema = st.tabs(
-    ["Ask AI", "SQL Test", "Guardrails", "Schema"]
+tab_ai, tab_sql, tab_star, tab_guardrails, tab_schema = st.tabs(
+    ["Ask AI", "SQL Test", "Star Schema", "Guardrails", "Schema"]
 )
 
 with tab_ai:
@@ -253,11 +263,27 @@ with tab_sql:
         elif result:
             render_result(result)
 
+with tab_star:
+    st.write("Controlled fact/dimension query through an allowed semantic join path.")
+    star_sql = st.text_area("Star schema SQL", value=STAR_SCHEMA_SQL, height=220)
+    if st.button("Run star schema query", type="primary"):
+        payload = {"question": "Star schema demo", "max_rows": max_rows, "sql": star_sql}
+        with st.spinner("Validating star-schema joins and querying Gold data..."):
+            result, error, status_code = post_query(payload)
+        if error:
+            st.error(f"Request failed{f' ({status_code})' if status_code else ''}: {error}")
+        elif result:
+            render_result(result)
+
 with tab_guardrails:
-    st.write("This query should be rejected because it targets Silver instead of Gold.")
-    st.code(GUARDRAIL_SQL, language="sql")
+    guardrail_choice = st.selectbox(
+        "Blocked query",
+        ["Silver access", "Fact wildcard"],
+    )
+    blocked_sql = GUARDRAIL_SQL if guardrail_choice == "Silver access" else FACT_WILDCARD_SQL
+    st.code(blocked_sql, language="sql")
     if st.button("Run blocked query"):
-        payload = {"question": "Guardrail demo", "max_rows": max_rows, "sql": GUARDRAIL_SQL}
+        payload = {"question": "Guardrail demo", "max_rows": max_rows, "sql": blocked_sql}
         result, error, status_code = post_query(payload)
         if error:
             st.error(f"Blocked as expected ({status_code}): {error}")

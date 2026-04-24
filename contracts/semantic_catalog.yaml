@@ -94,7 +94,7 @@ tables:
   - name: fact_trips
     description: Trip-level Gold fact table built from valid Silver trips.
     table_type: fact
-    execution_enabled: false
+    execution_enabled: true
     grain: One row per valid trip from silver_trips_unified.
     fields:
       - name: service_type
@@ -212,7 +212,7 @@ tables:
   - name: dim_date
     description: Date dimension derived from valid Silver pickup dates.
     table_type: dimension
-    execution_enabled: false
+    execution_enabled: true
     grain: One row per pickup_date.
     fields:
       - name: pickup_date
@@ -260,7 +260,7 @@ tables:
   - name: dim_zone
     description: Taxi zone dimension sourced from the TLC Taxi Zone Lookup reference file.
     table_type: dimension
-    execution_enabled: false
+    execution_enabled: true
     grain: One row per zone_id.
     fields:
       - name: zone_id
@@ -292,7 +292,7 @@ tables:
   - name: dim_service_type
     description: Service type dimension for taxi services included in the MVP.
     table_type: dimension
-    execution_enabled: false
+    execution_enabled: true
     grain: One row per service_type.
     fields:
       - name: service_type
@@ -316,7 +316,7 @@ tables:
   - name: dim_vendor
     description: Vendor dimension mapping TLC vendor codes to provider names.
     table_type: dimension
-    execution_enabled: false
+    execution_enabled: true
     grain: One row per vendor_id.
     fields:
       - name: vendor_id
@@ -340,7 +340,7 @@ tables:
   - name: dim_payment_type
     description: Payment type dimension mapping TLC payment codes to readable labels.
     table_type: dimension
-    execution_enabled: false
+    execution_enabled: true
     grain: One row per payment_type.
     fields:
       - name: payment_type

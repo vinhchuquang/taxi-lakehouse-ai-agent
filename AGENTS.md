@@ -52,8 +52,8 @@ agent framework unless the user explicitly asks for that change.
 - Aggregate marts `gold_daily_kpis` and `gold_zone_demand` are built from the
   star schema and remain useful as a fast/safe path for common dashboard and AI
   questions.
-- The semantic catalog covers the full Gold star schema, but only aggregate
-  marts are currently `execution_enabled`.
+- The semantic catalog covers the full Gold star schema. Aggregate marts,
+  `fact_trips`, and Gold dimensions are currently `execution_enabled`.
 - Column/table guardrails validate cataloged tables, execution-enabled tables,
   known columns, table aliases, and wildcard restrictions for detailed Gold
   tables.
@@ -61,8 +61,8 @@ agent framework unless the user explicitly asks for that change.
   `allowed_joins` and reject missing-`ON` or cartesian joins.
 - Text-to-SQL prompt planning prefers aggregate marts for common questions and
   keeps runtime prompts limited to execution-enabled tables.
-- The next major direction is controlled AI querying over the Gold star schema:
-  controlled fact/dim API exposure.
+- The next major direction is demo hardening, thesis-readiness verification,
+  and optional performance/materialization cleanup.
 
 ## Local Environment Notes
 
@@ -94,8 +94,9 @@ agent framework unless the user explicitly asks for that change.
 - For the current MVP, keep `gold_daily_kpis` and `gold_zone_demand` as curated
   serving marts.
 - Do not treat star schema as missing work; it already exists in Gold.
-- Do not expose `fact_trips` broadly to the AI layer until the semantic catalog
-  describes its grain, metrics, columns, keys, and allowed join paths.
+- `fact_trips` and Gold dimensions are exposed to the AI/API layer through the
+  semantic catalog, column guardrails, wildcard restrictions, and allowed join
+  paths.
 - Keep aggregate marts as the fast path for common questions, not as a
   replacement for controlled fact/dim querying.
 

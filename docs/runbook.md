@@ -202,6 +202,8 @@ Notes:
 - The semantic catalog is now both metadata contract and execution-gating
   contract.
 - Aggregate marts remain the only current AI-executable Gold surface.
+- This state was superseded by the controlled fact/dim exposure verification on
+  `2026-04-24`.
 
 ## Last Verified Architecture Review And Guardrail State
 
@@ -251,9 +253,9 @@ Implemented behavior:
 - Join predicates must match semantic catalog `allowed_joins`.
 - Pickup and dropoff `dim_zone` roles are both supported through their approved
   fact keys.
-- The real semantic catalog still keeps `fact_trips` and all `dim_*` tables
-  `execution_enabled: false`; Phase 8 validates the policy before controlled
-  exposure.
+- At Phase 8 verification time, the real semantic catalog still kept
+  `fact_trips` and all `dim_*` tables `execution_enabled: false`; that was
+  superseded by Phase 10 controlled exposure.
 
 Verification:
 
@@ -272,27 +274,69 @@ Verification:
   - join without `ON`
   - `CROSS JOIN`
 - HTTP smoke check after API restart returned rows for a valid
-  `gold_daily_kpis` query and HTTP `400` for direct `fact_trips` access,
-  confirming fact/dim execution remains disabled.
+  `gold_daily_kpis` query and HTTP `400` for direct `fact_trips` access at
+  Phase 8 time.
 
 ## AI Query Checks
 
 Use `/api/v1/schema` to confirm the semantic catalog before querying.
 
-Current AI-visible Gold tables:
+Current AI-visible and executable Gold tables:
 
 - `gold_daily_kpis`
 - `gold_zone_demand`
+- `fact_trips`
+- `dim_date`
+- `dim_zone`
+- `dim_service_type`
+- `dim_vendor`
+- `dim_payment_type`
 
 The semantic catalog includes table type, execution flag, grain, dimensions,
-metrics, allowed filters, keys, and join metadata. `fact_trips` and Gold
-dimensions are intentionally cataloged but not execution-enabled yet, so they
-do not appear in the current Text-to-SQL execution surface.
+metrics, allowed filters, keys, and join metadata. Fact/dimension access is
+controlled by column validation, wildcard restrictions, and allowed join paths.
 
 Current SQL guardrails also validate referenced columns and table aliases
 against the semantic catalog before execution. Detailed Gold tables such as
 `fact_trips` reject wildcard `SELECT *`. Joins must match cataloged
 `allowed_joins`; missing-`ON` and cartesian joins are rejected.
+
+When Gold views resolve MinIO-backed Bronze reference data, the API DuckDB
+connection configures S3 access from `DUCKDB_S3_ENDPOINT` or `MINIO_ENDPOINT`,
+plus the MinIO credentials in `.env`.
+
+## Last Verified Controlled Fact/Dim Exposure State
+
+Last controlled fact/dim exposure verification: `2026-04-24`.
+
+Implemented behavior:
+
+- `fact_trips` and Gold dimensions are now `execution_enabled: true` in
+  `contracts/semantic_catalog.yaml`.
+- Runtime Text-to-SQL prompt rendering includes aggregate marts, fact table,
+  dimensions, and allowed joins.
+- API query execution configures DuckDB S3/MinIO settings before executing
+  read-only SQL, so `dim_zone` can resolve the MinIO-backed Taxi Zone Lookup
+  reference view.
+- Streamlit demo includes a `Star Schema` tab with a controlled fact/dim query.
+- Guardrails still reject `SELECT *` on `fact_trips`, invalid star-schema joins,
+  DML/DDL, and Bronze/Silver access.
+
+Verification:
+
+- Host-local syntax compile passed for API, demo, and test files.
+- Host-local `python -m pytest -p no:cacheprovider` passed with `12 passed,
+  2 skipped`; Docker remains the preferred environment for API/guardrail tests.
+- `docker compose restart api demo` applied API and demo changes.
+- HTTP smoke checks passed for:
+  - `gold_daily_kpis`
+  - `fact_trips` joined to `dim_vendor`
+  - `fact_trips` joined to `dim_payment_type`
+  - `fact_trips` joined to pickup-role `dim_zone`
+  - `fact_trips` joined to dropoff-role `dim_zone`
+  - blocked invalid join
+  - blocked `select * from fact_trips`
+- Streamlit demo returned HTTP `200`.
 
 ## Last Verified Text-to-SQL Planner State
 
@@ -304,11 +348,11 @@ Implemented behavior:
   common daily KPI, service type, and zone demand questions.
 - The model is instructed to use fact/dimension tables only when they are
   execution-enabled and the question requires star-schema detail.
-- Runtime prompt rendering remains limited to execution-enabled tables, so the
-  current API prompt still excludes `fact_trips` and `dim_*`.
+- Runtime prompt rendering remains limited to execution-enabled tables; after
+  Phase 10 this includes aggregate marts, `fact_trips`, and Gold dimensions.
 - Planning-context rendering can include disabled fact/dim tables and allowed
-  joins when called with `include_disabled=True`; this is for tests and future
-  controlled exposure, not current execution.
+  joins when called with `include_disabled=True`; this remains useful if a
+  future phase catalogs tables before exposing them.
 - Catalog metadata is grouped by aggregate marts, fact tables, dimensions, and
   allowed joins.
 
@@ -320,9 +364,11 @@ Verification:
   with `4 passed`.
 - Host-local `python -m pytest -p no:cacheprovider` passed with `12 passed,
   2 skipped`; Docker remains the preferred environment for API/guardrail tests.
-- API-container prompt renderer smoke check confirmed runtime prompt excludes
-  `fact_trips`, runtime prompt includes aggregate marts, and planning context
-  includes `fact_trips`, dimensions, and allowed joins.
+- API-container prompt renderer smoke check at Phase 9 time confirmed runtime
+  prompt excluded `fact_trips`, runtime prompt included aggregate marts, and
+  planning context included `fact_trips`, dimensions, and allowed joins.
+- This runtime prompt surface was expanded in Phase 10 after controlled
+  fact/dim exposure.
 - `docker compose restart api` restarted the running API service so Text-to-SQL
   requests use the updated prompt code.
 

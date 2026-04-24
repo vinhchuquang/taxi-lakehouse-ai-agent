@@ -80,7 +80,7 @@ def _validate_wildcards(
     referenced_tables: set[str],
     table_by_name: dict[str, SchemaTable],
 ) -> None:
-    if not list(expression.find_all(exp.Star)):
+    if not _select_projects_wildcard(expression):
         return
 
     wildcard_blocked_tables = {
@@ -91,6 +91,16 @@ def _validate_wildcards(
     if wildcard_blocked_tables:
         blocked = ", ".join(sorted(wildcard_blocked_tables))
         raise SQLValidationError(f"Wildcard SELECT is not allowed for detailed Gold tables: {blocked}.")
+
+
+def _select_projects_wildcard(expression: exp.Select) -> bool:
+    for projection in expression.expressions:
+        projected = projection.this if isinstance(projection, exp.Alias) else projection
+        if isinstance(projected, exp.Star):
+            return True
+        if isinstance(projected, exp.Column) and isinstance(projected.this, exp.Star):
+            return True
+    return False
 
 
 def _validate_columns(

@@ -43,12 +43,13 @@ Gold contains both:
 - aggregate marts: `gold_daily_kpis` and `gold_zone_demand`
 
 Aggregate marts are the fast path for common dashboard and AI questions. The
-star schema is the flexible analytical foundation. The next AI direction is
-controlled querying over the star schema after semantic metadata and guardrails
-describe allowed columns and joins.
+star schema is the flexible analytical foundation and is exposed through
+controlled API access after semantic metadata, column guardrails, wildcard
+restrictions, and join guardrails validate generated SQL.
 
 ## Serving Principle
 
 The AI layer must not query raw Bronze or partially cleaned Silver data. It
 should operate over curated Gold tables and semantic metadata, with SQL validated
-before execution.
+before execution. Fact/dimension queries must use explicit cataloged columns and
+approved semantic join paths.

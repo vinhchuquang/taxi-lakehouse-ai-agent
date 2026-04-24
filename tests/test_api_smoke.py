@@ -47,22 +47,51 @@ tables:
   - name: fact_trips
     description: Trip fact
     table_type: fact
-    execution_enabled: false
+    execution_enabled: true
     grain: One row per trip.
     fields:
       - name: pickup_date
         description: Pickup date.
+      - name: vendor_id
+        description: Vendor ID.
       - name: trip_distance
         description: Trip distance.
     dimensions:
       - pickup_date
+      - vendor_id
     metrics:
       - name: trip_distance
         description: Trip distance.
     allowed_filters:
       - pickup_date
+      - vendor_id
       - trip_distance
     primary_key: []
+    foreign_keys: []
+    allowed_joins:
+      - left_table: fact_trips
+        left_column: vendor_id
+        right_table: dim_vendor
+        right_column: vendor_id
+  - name: dim_vendor
+    description: Vendor dimension
+    table_type: dimension
+    execution_enabled: true
+    grain: One row per vendor.
+    fields:
+      - name: vendor_id
+        description: Vendor ID.
+      - name: vendor_name
+        description: Vendor name.
+    dimensions:
+      - vendor_id
+      - vendor_name
+    metrics: []
+    allowed_filters:
+      - vendor_id
+      - vendor_name
+    primary_key:
+      - vendor_id
     foreign_keys: []
     allowed_joins: []
 """.strip(),
@@ -83,6 +112,25 @@ tables:
         connection.execute(
             "insert into gold_daily_kpis values ('yellow_taxi', date '2024-01-01', 10)"
         )
+        connection.execute(
+            """
+            create table fact_trips (
+                pickup_date date,
+                vendor_id integer,
+                trip_distance double
+            )
+            """
+        )
+        connection.execute("insert into fact_trips values (date '2024-01-01', 1, 3.5)")
+        connection.execute(
+            """
+            create table dim_vendor (
+                vendor_id integer,
+                vendor_name varchar
+            )
+            """
+        )
+        connection.execute("insert into dim_vendor values (1, 'Creative Mobile Technologies, LLC')")
 
     from app import main
 
@@ -127,13 +175,19 @@ def test_schema_endpoint_returns_full_catalog_metadata(tmp_path, monkeypatch) ->
 
     assert response.status_code == 200
     payload = response.json()
-    assert {table["name"] for table in payload["tables"]} == {"gold_daily_kpis", "fact_trips"}
+    assert {table["name"] for table in payload["tables"]} == {
+        "gold_daily_kpis",
+        "fact_trips",
+        "dim_vendor",
+    }
     mart = next(table for table in payload["tables"] if table["name"] == "gold_daily_kpis")
     fact = next(table for table in payload["tables"] if table["name"] == "fact_trips")
+    vendor = next(table for table in payload["tables"] if table["name"] == "dim_vendor")
     assert mart["execution_enabled"] is True
     assert mart["primary_key"] == ["service_type", "pickup_date"]
-    assert fact["execution_enabled"] is False
-    assert fact["allowed_joins"] == []
+    assert fact["execution_enabled"] is True
+    assert len(fact["allowed_joins"]) == 1
+    assert vendor["execution_enabled"] is True
 
 
 def test_query_endpoint_rejects_non_gold_sql(tmp_path, monkeypatch) -> None:
@@ -152,7 +206,32 @@ def test_query_endpoint_rejects_non_gold_sql(tmp_path, monkeypatch) -> None:
     assert "non-Gold" in response.json()["detail"]
 
 
-def test_query_endpoint_rejects_disabled_fact_sql(tmp_path, monkeypatch) -> None:
+def test_query_endpoint_allows_fact_dimension_join(tmp_path, monkeypatch) -> None:
+    client = build_test_client(tmp_path, monkeypatch)
+
+    response = client.post(
+        "/api/v1/query",
+        json={
+            "question": "Show vendor trip distance",
+            "max_rows": 10,
+            "sql": (
+                "select v.vendor_name, sum(f.trip_distance) as total_distance "
+                "from fact_trips f "
+                "join dim_vendor v on f.vendor_id = v.vendor_id "
+                "group by v.vendor_name"
+            ),
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["columns"] == ["vendor_name", "total_distance"]
+    assert payload["rows"] == [
+        {"vendor_name": "Creative Mobile Technologies, LLC", "total_distance": 3.5}
+    ]
+
+
+def test_query_endpoint_rejects_fact_wildcard_sql(tmp_path, monkeypatch) -> None:
     client = build_test_client(tmp_path, monkeypatch)
 
     response = client.post(
@@ -165,7 +244,28 @@ def test_query_endpoint_rejects_disabled_fact_sql(tmp_path, monkeypatch) -> None
     )
 
     assert response.status_code == 400
-    assert "not execution-enabled" in response.json()["detail"]
+    assert "Wildcard SELECT" in response.json()["detail"]
+
+
+def test_query_endpoint_rejects_invalid_star_join(tmp_path, monkeypatch) -> None:
+    client = build_test_client(tmp_path, monkeypatch)
+
+    response = client.post(
+        "/api/v1/query",
+        json={
+            "question": "Show bad star join",
+            "max_rows": 10,
+            "sql": (
+                "select v.vendor_name, sum(f.trip_distance) as total_distance "
+                "from fact_trips f "
+                "join dim_vendor v on f.pickup_date = v.vendor_id "
+                "group by v.vendor_name"
+            ),
+        },
+    )
+
+    assert response.status_code == 400
+    assert "allowed semantic catalog join path" in response.json()["detail"]
 
 
 def test_query_endpoint_rejects_ddl(tmp_path, monkeypatch) -> None:

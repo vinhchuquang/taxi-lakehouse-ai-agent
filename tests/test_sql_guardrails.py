@@ -180,7 +180,8 @@ def test_validate_gold_select_allows_cte_over_gold_table() -> None:
 
 def test_validate_gold_select_allows_valid_fact_vendor_join() -> None:
     result = validate_gold_select(
-        "select f.pickup_date, v.vendor_name, sum(f.trip_distance) as total_distance "
+        "select f.pickup_date, v.vendor_name, count(*) as trip_count, "
+        "sum(f.trip_distance) as total_distance "
         "from fact_trips as f "
         "join dim_vendor as v on f.vendor_id = v.vendor_id "
         "group by f.pickup_date, v.vendor_name",
@@ -189,6 +190,7 @@ def test_validate_gold_select_allows_valid_fact_vendor_join() -> None:
     )
 
     assert result.tables == {"fact_trips", "dim_vendor"}
+    assert "COUNT(*) AS trip_count" in result.sql
     assert result.sql.endswith("LIMIT 100")
 
 

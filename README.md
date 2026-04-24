@@ -85,8 +85,8 @@ Gold aggregate marts:
 - `gold_zone_demand`
 
 Aggregate marts là fast/safe path cho dashboard và câu hỏi AI phổ biến. Star
-schema là nền tảng phân tích linh hoạt hơn, nhưng `fact_trips` và `dim_*` chỉ
-được mở cho AI execution sau khi column guardrails và join guardrails hoàn tất.
+schema là nền tảng phân tích linh hoạt hơn và hiện đã được mở có kiểm soát cho
+AI/API sau khi có column guardrails, join guardrails và semantic catalog.
 
 ## AI Query Agent
 
@@ -107,13 +107,19 @@ Guardrails hiện tại:
 - ép `LIMIT <= max_rows`
 - chạy DuckDB bằng read-only connection
 
-Hiện tại AI execution surface chỉ gồm:
+AI execution surface hiện gồm:
 
 - `gold_daily_kpis`
 - `gold_zone_demand`
+- `fact_trips`
+- `dim_date`
+- `dim_zone`
+- `dim_service_type`
+- `dim_vendor`
+- `dim_payment_type`
 
-`fact_trips` và `dim_*` đã có semantic metadata nhưng vẫn
-`execution_enabled: false` cho đến khi join guardrails được triển khai.
+Fact/dim queries vẫn bị kiểm soát: không `SELECT *` trên detailed tables, chỉ
+dùng cataloged columns, và join phải khớp `allowed_joins` trong semantic catalog.
 
 ## Chạy Local
 

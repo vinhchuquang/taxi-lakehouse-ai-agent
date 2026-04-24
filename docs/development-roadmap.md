@@ -15,8 +15,8 @@ controlled querying over the Gold star schema.
   ingestion cache/fallback files.
 - Aggregate marts are the fast path for common questions. They do not replace
   the Gold star schema.
-- AI may query `fact_trips` and dimensions only after semantic metadata and
-  guardrails describe allowed tables, columns, metrics, and joins.
+- AI may query `fact_trips` and dimensions through semantic metadata,
+  execution flags, column guardrails, wildcard restrictions, and join guardrails.
 
 ## Phase 1: Stabilize MVP Lakehouse
 
@@ -200,8 +200,8 @@ Completed:
   - pickup zone through `fact_trips.pickup_zone_id`
   - dropoff zone through `fact_trips.dropoff_zone_id`
 - Add tests for valid joins, invalid joins, missing `ON`, and cartesian joins.
-- Keep `fact_trips` and all `dim_*` tables `execution_enabled: false` in the
-  real semantic catalog until prompt planning and controlled exposure are ready.
+- Keep `fact_trips` and all `dim_*` tables `execution_enabled: false` at Phase
+  8 time until prompt planning and controlled exposure are ready.
 
 Verification:
 
@@ -215,8 +215,7 @@ Verification:
   `CROSS JOIN`.
 - `docker compose restart api` restarted the running API service.
 - HTTP smoke check after restart returned rows for a valid `gold_daily_kpis`
-  query and HTTP `400` for direct `fact_trips` access, confirming the real
-  semantic catalog still keeps fact/dim execution disabled.
+  query and HTTP `400` for direct `fact_trips` access at Phase 8 time.
 
 ## Phase 9: Text-to-SQL Planner For Star Schema
 
@@ -235,7 +234,7 @@ Completed:
   allowed joins.
 - Instruct the model not to use unknown columns, non-cataloged joins, or
   `select *`.
-- Keep the runtime prompt limited to execution-enabled tables so current AI
+- Keep the runtime prompt limited to execution-enabled tables so Phase 9 AI
   execution still sees only `gold_daily_kpis` and `gold_zone_demand`.
 - Add an `include_disabled=True` planning render path that can show cataloged
   fact/dim metadata and allowed joins for tests and future controlled exposure.
@@ -251,19 +250,19 @@ Verification:
 - Host-local `python -m pytest -p no:cacheprovider` passed with `12 passed,
   2 skipped`; the skipped tests remain dependency-gated in host Python.
 - API-container prompt renderer smoke check confirmed:
-  - runtime prompt does not include `fact_trips`
+  - runtime prompt does not include `fact_trips` at Phase 9 time
   - runtime prompt includes the aggregate marts group
   - planning context includes `fact_trips`, dimensions, and allowed joins
 - `docker compose restart api` restarted the running API service.
 
 ## Phase 10: Controlled Fact/Dim Exposure And Demo Readiness
 
-Status: planned.
+Status: completed on 2026-04-24.
 
 Goal: officially support controlled API queries over `fact_trips` and
 dimensions, then make the demo and thesis docs clear.
 
-Required changes:
+Completed:
 
 - Allow `/api/v1/query` to execute valid SQL over `fact_trips` and `dim_*` after
   Phase 6-8 guardrails are in place.
@@ -272,8 +271,26 @@ Required changes:
 - Keep aggregate mart smoke tests.
 - Update Streamlit demo with mart query, star-schema query, blocked query, and
   semantic catalog views.
-- Fix stale or unclear docs, including README and architecture text, so they
-  describe the current implemented state.
+- Configure API DuckDB connections for MinIO/S3 access when Gold views depend on
+  Bronze reference data, using `DUCKDB_S3_ENDPOINT` or `MINIO_ENDPOINT`.
+- Fix stale or unclear docs so they describe the current implemented state.
+
+Verification:
+
+- Host-local syntax compile passed for changed API, demo, and test files.
+- Host-local `python -m pytest -p no:cacheprovider` passed with `12 passed,
+  2 skipped`; API tests remain dependency-gated in host Python.
+- `docker compose restart api demo` restarted running services after code and
+  demo changes.
+- HTTP smoke checks passed for:
+  - aggregate mart query on `gold_daily_kpis`
+  - fact plus `dim_vendor`
+  - fact plus `dim_payment_type`
+  - fact plus pickup-role `dim_zone`
+  - fact plus dropoff-role `dim_zone`
+  - blocked invalid star join
+  - blocked `select * from fact_trips`
+- Streamlit demo returned HTTP `200`.
 
 ## Documentation And Handoff Rule
 

@@ -39,9 +39,8 @@ graduation project without adding unnecessary agent frameworks.
 
 - SQL guardrails validate tables, execution status, cataloged columns, and
   approved semantic join paths. The Text-to-SQL planner now prefers aggregate
-  marts for common questions and keeps runtime prompts limited to
-  execution-enabled tables. Star-schema execution should still remain disabled
-  until controlled fact/dim API exposure and demo readiness are complete.
+  marts for common questions, while controlled fact/dim API exposure supports
+  vendor, payment type, pickup zone, and dropoff zone analysis.
 - The semantic catalog, dbt schema docs, and human documentation are separate
   sources that can drift. A future consistency test should compare Gold model
   names and catalog entries.
@@ -69,8 +68,9 @@ Use this narrative when explaining the system:
    star schema for controlled flexible analysis.
 5. AI is intentionally constrained. It does not query Bronze or Silver, cannot
    write data, and only executes SQL after semantic and syntactic validation.
-6. `fact_trips` and dimensions are cataloged but disabled until column and join
-   guardrails are complete. This is a deliberate safety decision.
+6. `fact_trips` and dimensions are queryable only through semantic metadata,
+   explicit columns, and approved joins. This is the controlled star-schema
+   path.
 
 ## Next Optimization Backlog
 
@@ -88,9 +88,8 @@ Priority 2: Join guardrails
 - Reject cartesian joins, joins without `ON`, and joins on wrong keys.
 - Support both pickup and dropoff `dim_zone` roles.
 
-Status: implemented for guardrail validation and prompt planning; fact/dim
-execution remains disabled in the semantic catalog until the controlled demo
-path is ready.
+Status: implemented for guardrail validation, prompt planning, and controlled
+fact/dim execution.
 
 Priority 3: Catalog and documentation consistency
 
