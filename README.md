@@ -60,10 +60,11 @@ Luồng xử lý:
 5. dbt chuẩn hóa Silver và xây Gold trong DuckDB.
 6. API và demo chỉ phục vụ dữ liệu Gold đã curated.
 
-Vì TLC thường publish dữ liệu muộn, scheduled run dùng
-`TLC_PUBLICATION_LAG_MONTHS=2` theo mặc định. Ví dụ Airflow interval
-`2026-04-01 -> 2026-05-01` sẽ ingest file tháng `2026-02`. Manual trigger có
-`year/month` vẫn ingest đúng tháng được chỉ định.
+Vì TLC thường publish dữ liệu muộn, DAG tự động chạy ngày 15 hằng tháng và kiểm
+tra `TLC_LOOKBACK_MONTHS=3` tháng trước đó theo mặc định. Object nào đã có trong
+MinIO thì bỏ qua, object nào mới thì download và upload vào Bronze. Nếu file TLC
+chưa được publish, DAG ghi nhận `skipped_source_unavailable` thay vì fail cả
+pipeline. Manual trigger có `year/month` vẫn ingest đúng tháng được chỉ định.
 
 Object MinIO kỳ vọng:
 

@@ -39,11 +39,15 @@
 ## Current Execution Notes
 
 - Bronze ingestion currently starts with Yellow and Green monthly files.
-- Scheduled ingestion uses `TLC_PUBLICATION_LAG_MONTHS` to avoid requesting TLC
-  files before they are published. The default lag is `2`, so a scheduled run
-  whose Airflow data interval starts at `2026-04-01` ingests `2026-02`.
-- Manual DAG triggers with explicit `year` and `month` override the publication
-  lag and ingest exactly the requested month.
+- Scheduled ingestion runs on day 15 each month and checks the previous
+  `TLC_LOOKBACK_MONTHS` months, default `3`, to handle TLC's delayed
+  publication cadence.
+- Existing Bronze objects in MinIO are skipped before download. New source files
+  are downloaded and uploaded to Bronze. Unpublished TLC source files returning
+  HTTP `403` or `404` are recorded as `skipped_source_unavailable` instead of
+  failing the whole DAG.
+- Manual DAG triggers with explicit `year` and `month` ingest exactly the
+  requested month.
 - Taxi Zone Lookup is ingested separately as reference data for enrichment.
 - Ingestion downloads each source file to the local data volume and uploads the
   same object key into MinIO bucket `taxi-lakehouse`.
@@ -343,34 +347,34 @@ Verification:
   - blocked `select * from fact_trips`
 - Streamlit demo returned HTTP `200`.
 
-## Last Verified TLC Publication Lag State
+## Last Verified Monthly Lookback Ingestion State
 
-Last TLC publication lag verification: `2026-04-24`.
+Last monthly lookback ingestion verification: `2026-04-24`.
 
 Implemented behavior:
 
-- Scheduled monthly ingestion now applies `TLC_PUBLICATION_LAG_MONTHS`, default
-  `2`, before building Yellow and Green trip manifests.
-- Manual DAG triggers with explicit `year` and `month` still bypass the lag and
-  ingest the requested month exactly.
-- This avoids scheduled runs requesting not-yet-published TLC files. For
-  example, when Airflow's data interval starts at `2026-04-01`, the trip
-  manifests target `2026-02`.
+- Scheduled monthly ingestion runs at `00:00` on day `15` of each month.
+- Each scheduled run checks the previous `TLC_LOOKBACK_MONTHS` months, default
+  `3`, for both Yellow and Green Taxi files.
+- Existing MinIO Bronze objects are skipped before download.
+- New files are downloaded to local cache and uploaded to Bronze MinIO.
+- Unpublished TLC source files returning HTTP `403` or `404` are skipped without
+  failing the whole DAG.
+- Manual DAG triggers with explicit `year` and `month` still ingest the
+  requested month exactly.
 
 Verification:
 
 - `python -m pytest -p no:cacheprovider tests/test_tlc_ingestion.py` passed
-  with `8 passed`.
-- Host-local `python -m pytest -p no:cacheprovider` passed with `15 passed,
+  with `12 passed`.
+- Host-local `python -m pytest -p no:cacheprovider` passed with `19 passed,
   2 skipped`.
 - Syntax compile passed for the DAG, ingestion helper, and ingestion tests.
-- `docker compose restart airflow-scheduler airflow-webserver` applied the DAG
-  code.
-- Airflow-container check confirmed:
-  - scheduled interval start `2026-04-01` resolves to ingest month `2026-02-01`
-  - manual trigger config `{year: 2024, month: 1}` resolves to `2024-01-01`
-- `airflow dags details taxi_monthly_pipeline` confirmed the DAG remains active,
-  unpaused, and scheduled monthly.
+- Airflow-container check confirmed scheduled run date `2026-04-15` prepares
+  manifests for `2026-01`, `2026-02`, and `2026-03`, while manual trigger config
+  `{year: 2024, month: 1}` prepares only `2024-01`.
+- `airflow dags details taxi_monthly_pipeline` confirmed the DAG remains active
+  and unpaused with schedule `0 0 15 * *`.
 
 ## Last Verified Text-to-SQL Planner State
 
@@ -534,8 +538,7 @@ Expected results:
 - `dbt build` completes Bronze, Silver, and Gold models
 - Silver only keeps trips whose pickup timestamp falls inside the source file partition month
 
-For scheduled runs, Airflow uses the data interval start minus
-`TLC_PUBLICATION_LAG_MONTHS`. With the default `2` month lag, the run created
-after `2026-05-01` for interval `2026-04-01 -> 2026-05-01` ingests February
-2026 files. This matches the TLC publication delay when the website has only
-published data through `2026-02`.
+For scheduled runs, Airflow runs on the 15th and checks the previous
+`TLC_LOOKBACK_MONTHS` months. With the default `3`, the run at `2026-04-15`
+checks January, February, and March 2026 files. Already-ingested objects are
+skipped, and not-yet-published files are skipped without failing the pipeline.

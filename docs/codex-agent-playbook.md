@@ -106,9 +106,11 @@ behavior were checked.
 
 - Keep source files as raw as practical.
 - Preserve `year=YYYY/month=MM` paths for Yellow and Green.
-- Scheduled monthly ingestion applies `TLC_PUBLICATION_LAG_MONTHS` before
-  building trip manifests because TLC publishes monthly files late. Manual
-  Airflow trigger config with `year/month` overrides the lag.
+- Scheduled monthly ingestion runs on day 15 and checks the previous
+  `TLC_LOOKBACK_MONTHS` months, default `3`, because TLC publishes monthly files
+  late. Existing MinIO objects are skipped, unpublished TLC source files are
+  skipped, and manual Airflow trigger config with `year/month` ingests exactly
+  the requested month.
 - Treat Taxi Zone Lookup as reference data, not a fact source.
 - If manifests or object keys change, update the runbook and ingestion tests.
 

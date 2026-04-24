@@ -6,6 +6,7 @@ from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
 from pathlib import Path
 from shutil import copyfileobj
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 TLC_CLOUDFRONT_BASE_URL = "https://d37ci6vzurychx.cloudfront.net"
@@ -65,6 +66,16 @@ def month_start_with_lag(run_date: datetime, lag_months: int) -> datetime:
     year = month_index // 12
     month = month_index % 12 + 1
     return datetime(year, month, 1)
+
+
+def previous_month_starts(run_date: datetime, count: int) -> list[datetime]:
+    if count <= 0:
+        raise ValueError("count must be positive")
+
+    return [
+        month_start_with_lag(run_date, lag_months=lag)
+        for lag in range(count, 0, -1)
+    ]
 
 
 def build_trip_manifest(dataset: str, run_date: datetime) -> TripDataManifest:
@@ -234,11 +245,50 @@ def ingest_file_to_minio(
     minio_secret_key: str,
     timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS,
 ) -> dict[str, str]:
-    downloaded_manifest = download_file_to_local(
-        manifest=manifest,
-        local_data_root=local_data_root,
-        timeout_seconds=timeout_seconds,
-    )
+    if minio_object_exists(
+        minio_endpoint=minio_endpoint,
+        minio_bucket=minio_bucket,
+        object_key=manifest["bronze_object_key"],
+        minio_access_key=minio_access_key,
+        minio_secret_key=minio_secret_key,
+    ):
+        LOGGER.info(
+            "Skipping dataset=%s because s3://%s/%s already exists",
+            manifest["dataset"],
+            minio_bucket,
+            manifest["bronze_object_key"],
+        )
+        return {
+            **manifest,
+            "minio_bucket": minio_bucket,
+            "minio_endpoint": minio_endpoint,
+            "minio_object_key": manifest["bronze_object_key"],
+            "minio_uri": f"s3://{minio_bucket}/{manifest['bronze_object_key']}",
+            "status": "skipped_existing",
+            "checked_at_utc": datetime.now(timezone.utc).isoformat(),
+        }
+
+    try:
+        downloaded_manifest = download_file_to_local(
+            manifest=manifest,
+            local_data_root=local_data_root,
+            timeout_seconds=timeout_seconds,
+        )
+    except HTTPError as exc:
+        if exc.code in {403, 404}:
+            LOGGER.info(
+                "Skipping dataset=%s because source is not available yet: %s",
+                manifest["dataset"],
+                manifest["source_url"],
+            )
+            return {
+                **manifest,
+                "status": "skipped_source_unavailable",
+                "http_status": str(exc.code),
+                "checked_at_utc": datetime.now(timezone.utc).isoformat(),
+            }
+        raise
+
     return upload_local_file_to_minio(
         manifest=downloaded_manifest,
         minio_endpoint=minio_endpoint,
@@ -258,3 +308,33 @@ def download_tripdata_to_local(
         local_data_root=local_data_root,
         timeout_seconds=timeout_seconds,
     )
+
+
+def minio_object_exists(
+    minio_endpoint: str,
+    minio_bucket: str,
+    object_key: str,
+    minio_access_key: str,
+    minio_secret_key: str,
+) -> bool:
+    import boto3
+    from botocore.client import Config
+    from botocore.exceptions import ClientError
+
+    client = boto3.client(
+        "s3",
+        endpoint_url=minio_endpoint,
+        aws_access_key_id=minio_access_key,
+        aws_secret_access_key=minio_secret_key,
+        config=Config(signature_version="s3v4"),
+        region_name="us-east-1",
+    )
+
+    try:
+        client.head_object(Bucket=minio_bucket, Key=object_key)
+    except ClientError as exc:
+        error_code = str(exc.response.get("Error", {}).get("Code", ""))
+        if error_code in {"404", "NoSuchKey", "NoSuchBucket", "NotFound"}:
+            return False
+        raise
+    return True

@@ -13,12 +13,12 @@ from lib.tlc_ingestion import (
     build_lookup_manifest,
     build_trip_manifest,
     ingest_file_to_minio,
-    month_start_with_lag,
+    previous_month_starts,
 )
 
 LOCAL_DATA_ROOT = os.getenv("LOCAL_DATA_ROOT", "/opt/airflow/data")
 TLC_DOWNLOAD_TIMEOUT_SECONDS = int(os.getenv("TLC_DOWNLOAD_TIMEOUT_SECONDS", "300"))
-TLC_PUBLICATION_LAG_MONTHS = int(os.getenv("TLC_PUBLICATION_LAG_MONTHS", "2"))
+TLC_LOOKBACK_MONTHS = int(os.getenv("TLC_LOOKBACK_MONTHS", "3"))
 MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "http://minio:9000")
 MINIO_BUCKET = os.getenv("MINIO_BUCKET", "taxi-lakehouse")
 MINIO_ROOT_USER = os.getenv("MINIO_ROOT_USER", "minioadmin")
@@ -26,19 +26,19 @@ MINIO_ROOT_PASSWORD = os.getenv("MINIO_ROOT_PASSWORD", "minioadmin123")
 LOGGER = logging.getLogger(__name__)
 
 
-def resolve_run_date(data_interval_start, dag_run=None) -> datetime:
+def resolve_run_dates(data_interval_start, dag_run=None) -> list[datetime]:
     if dag_run and dag_run.conf:
         year = dag_run.conf.get("year")
         month = dag_run.conf.get("month")
         if year and month:
-            return datetime(int(year), int(month), 1)
-    return month_start_with_lag(data_interval_start, TLC_PUBLICATION_LAG_MONTHS)
+            return [datetime(int(year), int(month), 1)]
+    return previous_month_starts(data_interval_start, TLC_LOOKBACK_MONTHS)
 
 
 with DAG(
     dag_id="taxi_monthly_pipeline",
     start_date=datetime(2024, 1, 1),
-    schedule="@monthly",
+    schedule="0 0 15 * *",
     catchup=False,
     render_template_as_native_obj=True,
     tags=["taxi", "lakehouse", "elt", "yellow", "green"],
@@ -46,18 +46,15 @@ with DAG(
     start = EmptyOperator(task_id="start")
 
     @task
-    def prepare_yellow_manifest(data_interval_start=None, dag_run=None) -> dict[str, str]:
-        run_date = resolve_run_date(data_interval_start, dag_run)
-        manifest = build_trip_manifest("yellow", run_date).to_dict()
-        LOGGER.info("Prepared yellow manifest: %s", manifest)
-        return manifest
-
-    @task
-    def prepare_green_manifest(data_interval_start=None, dag_run=None) -> dict[str, str]:
-        run_date = resolve_run_date(data_interval_start, dag_run)
-        manifest = build_trip_manifest("green", run_date).to_dict()
-        LOGGER.info("Prepared green manifest: %s", manifest)
-        return manifest
+    def prepare_trip_manifests(data_interval_start=None, dag_run=None) -> list[dict[str, str]]:
+        run_dates = resolve_run_dates(data_interval_start, dag_run)
+        manifests = [
+            build_trip_manifest(dataset, run_date).to_dict()
+            for run_date in run_dates
+            for dataset in ("yellow", "green")
+        ]
+        LOGGER.info("Prepared trip manifests: %s", manifests)
+        return manifests
 
     @task
     def prepare_lookup_reference() -> dict[str, str]:
@@ -100,18 +97,17 @@ with DAG(
     publish_metadata = EmptyOperator(task_id="publish_metadata")
     done = EmptyOperator(task_id="done")
 
-    yellow_manifest = prepare_yellow_manifest()
-    green_manifest = prepare_green_manifest()
+    trip_manifests = prepare_trip_manifests()
     lookup_manifest = prepare_lookup_reference()
-    yellow_bronze = ingest_to_bronze.override(task_id="ingest_yellow_bronze")(yellow_manifest)
-    green_bronze = ingest_to_bronze.override(task_id="ingest_green_bronze")(green_manifest)
+    trip_bronze = ingest_to_bronze.override(task_id="ingest_trip_bronze").expand(
+        manifest=trip_manifests
+    )
     lookup_reference = ingest_to_bronze.override(task_id="ingest_taxi_zone_lookup")(lookup_manifest)
     build_silver = build_silver_layer()
     build_gold = build_gold_layer()
 
-    start >> [yellow_manifest, green_manifest, lookup_manifest]
-    yellow_manifest >> yellow_bronze
-    green_manifest >> green_bronze
+    start >> [trip_manifests, lookup_manifest]
     lookup_manifest >> lookup_reference
-    [yellow_bronze, green_bronze, lookup_reference] >> build_silver
+    trip_bronze >> build_silver
+    lookup_reference >> build_silver
     build_silver >> build_gold >> publish_metadata >> done

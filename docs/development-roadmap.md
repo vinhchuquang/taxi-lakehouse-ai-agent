@@ -292,18 +292,22 @@ Verification:
   - blocked `select * from fact_trips`
 - Streamlit demo returned HTTP `200`.
 
-## Phase 10B: TLC Publication Lag For Monthly Ingestion
+## Phase 10B: Monthly Lookback Ingestion
 
 Status: completed on 2026-04-24.
 
-Goal: prevent scheduled monthly ingestion from requesting TLC files that have
-not been published yet.
+Goal: run ingestion automatically on the 15th of each month, check recent TLC
+monthly files, and avoid redownloading Bronze objects that already exist.
 
 Completed:
 
-- Added `TLC_PUBLICATION_LAG_MONTHS`, default `2`, for scheduled Airflow runs.
-- Scheduled runs now build trip manifests from `data_interval_start` minus the
-  publication lag.
+- Changed the DAG schedule to `0 0 15 * *`.
+- Added `TLC_LOOKBACK_MONTHS`, default `3`, for scheduled Airflow runs.
+- Scheduled runs now prepare Yellow and Green manifests for the previous three
+  months.
+- Existing MinIO Bronze objects are skipped before download.
+- Unpublished TLC source files returning HTTP `403` or `404` are skipped without
+  failing the whole DAG.
 - Manual DAG triggers with explicit `year` and `month` still ingest the exact
   requested month.
 - Updated ingestion tests, `.env.example`, README, runbook, and agent playbook.
@@ -311,13 +315,14 @@ Completed:
 Verification:
 
 - `python -m pytest -p no:cacheprovider tests/test_tlc_ingestion.py` passed
-  with `8 passed`.
-- Host-local `python -m pytest -p no:cacheprovider` passed with `15 passed,
+  with `12 passed`.
+- Host-local `python -m pytest -p no:cacheprovider` passed with `19 passed,
   2 skipped`.
-- Airflow-container check confirmed scheduled interval `2026-04-01` resolves to
-  `2026-02-01`, while manual `{year: 2024, month: 1}` resolves to `2024-01-01`.
-- Airflow DAG details confirmed `taxi_monthly_pipeline` remains active,
-  unpaused, and scheduled monthly.
+- Airflow-container check confirmed scheduled date `2026-04-15` prepares
+  manifests for `2026-01`, `2026-02`, and `2026-03`, while manual
+  `{year: 2024, month: 1}` prepares only `2024-01`.
+- Airflow DAG details confirmed `taxi_monthly_pipeline` remains active and
+  unpaused with schedule `0 0 15 * *`.
 
 ## Documentation And Handoff Rule
 

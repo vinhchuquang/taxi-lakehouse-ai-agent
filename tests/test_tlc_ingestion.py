@@ -4,6 +4,7 @@ from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 import sys
 import types
+from urllib.error import HTTPError
 
 
 def load_tlc_ingestion_module():
@@ -60,6 +61,29 @@ def test_month_start_with_lag_rejects_negative_lag() -> None:
         assert "non-negative" in str(exc)
     else:
         raise AssertionError("Expected negative lag to be rejected")
+
+
+def test_previous_month_starts_returns_oldest_to_newest() -> None:
+    module = load_tlc_ingestion_module()
+
+    run_dates = module.previous_month_starts(datetime(2026, 4, 15), count=3)
+
+    assert run_dates == [
+        datetime(2026, 1, 1),
+        datetime(2026, 2, 1),
+        datetime(2026, 3, 1),
+    ]
+
+
+def test_previous_month_starts_rejects_non_positive_count() -> None:
+    module = load_tlc_ingestion_module()
+
+    try:
+        module.previous_month_starts(datetime(2026, 4, 15), count=0)
+    except ValueError as exc:
+        assert "positive" in str(exc)
+    else:
+        raise AssertionError("Expected non-positive count to be rejected")
 
 
 def test_build_lookup_manifest() -> None:
@@ -155,3 +179,71 @@ def test_upload_local_file_to_minio_rejects_empty_file(tmp_path) -> None:
         assert "empty" in str(exc)
     else:
         raise AssertionError("Expected empty files to be rejected")
+
+
+def test_ingest_file_to_minio_skips_existing_object(monkeypatch) -> None:
+    module = load_tlc_ingestion_module()
+
+    def existing_object(**kwargs):
+        return True
+
+    def fail_download(*args, **kwargs):
+        raise AssertionError("Existing MinIO objects should not be downloaded again")
+
+    monkeypatch.setattr(module, "minio_object_exists", existing_object)
+    monkeypatch.setattr(module, "download_file_to_local", fail_download)
+
+    result = module.ingest_file_to_minio(
+        manifest={
+            "dataset": "yellow",
+            "source_url": "https://example.test/yellow.parquet",
+            "bronze_object_key": "bronze/yellow_taxi/year=2026/month=02/yellow.parquet",
+            "local_relative_path": "bronze/yellow_taxi/year=2026/month=02/yellow.parquet",
+        },
+        local_data_root="/tmp/data",
+        minio_endpoint="http://minio:9000",
+        minio_bucket="taxi-lakehouse",
+        minio_access_key="minioadmin",
+        minio_secret_key="minioadmin123",
+    )
+
+    assert result["status"] == "skipped_existing"
+    assert result["minio_uri"] == (
+        "s3://taxi-lakehouse/bronze/yellow_taxi/year=2026/month=02/yellow.parquet"
+    )
+
+
+def test_ingest_file_to_minio_skips_unpublished_source(monkeypatch) -> None:
+    module = load_tlc_ingestion_module()
+
+    def missing_object(**kwargs):
+        return False
+
+    def unavailable_source(*args, **kwargs):
+        raise HTTPError(
+            url="https://example.test/missing.parquet",
+            code=404,
+            msg="Not Found",
+            hdrs=None,
+            fp=None,
+        )
+
+    monkeypatch.setattr(module, "minio_object_exists", missing_object)
+    monkeypatch.setattr(module, "download_file_to_local", unavailable_source)
+
+    result = module.ingest_file_to_minio(
+        manifest={
+            "dataset": "green",
+            "source_url": "https://example.test/missing.parquet",
+            "bronze_object_key": "bronze/green_taxi/year=2026/month=03/green.parquet",
+            "local_relative_path": "bronze/green_taxi/year=2026/month=03/green.parquet",
+        },
+        local_data_root="/tmp/data",
+        minio_endpoint="http://minio:9000",
+        minio_bucket="taxi-lakehouse",
+        minio_access_key="minioadmin",
+        minio_secret_key="minioadmin123",
+    )
+
+    assert result["status"] == "skipped_source_unavailable"
+    assert result["http_status"] == "404"
