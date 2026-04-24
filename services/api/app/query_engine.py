@@ -45,13 +45,28 @@ def _configure_s3_access(connection: duckdb.DuckDBPyConnection) -> None:
     use_ssl = os.getenv("DUCKDB_S3_USE_SSL", "false").lower()
     use_ssl_sql = "true" if use_ssl in {"1", "true", "yes"} else "false"
 
-    connection.execute("load httpfs")
+    if not _load_httpfs(connection):
+        return
+
     connection.execute(f"set s3_endpoint = '{_sql_string(endpoint)}'")
     connection.execute(f"set s3_access_key_id = '{_sql_string(access_key)}'")
     connection.execute(f"set s3_secret_access_key = '{_sql_string(secret_key)}'")
     connection.execute(f"set s3_region = '{_sql_string(region)}'")
     connection.execute(f"set s3_url_style = '{_sql_string(url_style)}'")
     connection.execute(f"set s3_use_ssl = {use_ssl_sql}")
+
+
+def _load_httpfs(connection: duckdb.DuckDBPyConnection) -> bool:
+    try:
+        connection.execute("load httpfs")
+        return True
+    except duckdb.Error:
+        try:
+            connection.execute("install httpfs")
+            connection.execute("load httpfs")
+            return True
+        except duckdb.Error:
+            return False
 
 
 def _sql_string(value: str) -> str:

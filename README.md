@@ -96,6 +96,15 @@ AI/API sau khi có column guardrails, join guardrails và semantic catalog.
 
 ## AI Query Agent
 
+The AI layer is a read-only query agent, not an autonomous data-writing agent.
+It follows an explicit workflow: understand intent, plan the query surface,
+generate SQL, validate guardrails, execute against curated Gold data, run
+self-checks, and summarize the result. It does not use LangChain, LangGraph,
+Vanna, DML/DDL, Bronze/Silver access, or write-capable tools.
+Final answers are deterministic by default for demo safety; set
+`OPENAI_ANSWER_SYNTHESIS=true` only when you want the API to ask OpenAI to write
+a natural-language answer from already-executed rows.
+
 API chính:
 
 - `GET /healthz`

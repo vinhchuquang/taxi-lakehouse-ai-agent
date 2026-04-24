@@ -166,6 +166,18 @@ def test_query_endpoint_allows_gold_select_with_sql_override(tmp_path, monkeypat
         {"service_type": "yellow_taxi", "pickup_date": "2024-01-01", "trip_count": 10}
     ]
     assert payload["sql"].endswith("LIMIT 10")
+    assert payload["answer"]
+    assert payload["confidence"] in {"high", "medium", "low"}
+    assert [step["name"] for step in payload["agent_steps"]] == [
+        "intent_analysis",
+        "planning",
+        "sql_generation",
+        "guardrail_validation",
+        "execution",
+        "self_check",
+        "answer",
+    ]
+    assert payload["agent_steps"][2]["status"] == "provided_sql"
 
 
 def test_schema_endpoint_returns_full_catalog_metadata(tmp_path, monkeypatch) -> None:
@@ -282,3 +294,23 @@ def test_query_endpoint_rejects_ddl(tmp_path, monkeypatch) -> None:
 
     assert response.status_code == 400
     assert "Only SELECT" in response.json()["detail"]
+
+
+def test_query_endpoint_returns_clarification_for_ambiguous_question(tmp_path, monkeypatch) -> None:
+    client = build_test_client(tmp_path, monkeypatch)
+
+    response = client.post(
+        "/api/v1/query",
+        json={
+            "question": "trips",
+            "max_rows": 10,
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["requires_clarification"] is True
+    assert payload["clarification_question"]
+    assert payload["rows"] == []
+    assert payload["sql"] == ""
+    assert payload["agent_steps"][0]["status"] == "needs_clarification"

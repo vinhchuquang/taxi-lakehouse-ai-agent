@@ -314,6 +314,54 @@ When Gold views resolve MinIO-backed Bronze reference data, the API DuckDB
 connection configures S3 access from `DUCKDB_S3_ENDPOINT` or `MINIO_ENDPOINT`,
 plus the MinIO credentials in `.env`.
 
+Current read-only agent workflow:
+
+- Analyze question intent and choose a query surface.
+- Plan aggregate mart or star-schema access from the semantic catalog.
+- Generate or accept SQL, then validate it with the same SQL guardrails.
+- Execute only validated read-only SQL against DuckDB.
+- Run deterministic result self-checks.
+- Return an answer, warnings, confidence, and an agent step trace.
+- Ask for clarification instead of executing when the question is too broad.
+- OpenAI answer synthesis is disabled by default for demo safety; set
+  `OPENAI_ANSWER_SYNTHESIS=true` to allow LLM-written final answers from
+  already-executed rows.
+
+## Last Verified Read-Only Agent Workflow State
+
+Last read-only agent workflow verification: `2026-04-24`.
+
+Implemented behavior:
+
+- `/api/v1/query` now runs through an internal agent orchestrator instead of a
+  direct Text-to-SQL path.
+- Query responses keep existing fields and add `answer`, `agent_steps`,
+  `warnings`, `confidence`, `requires_clarification`, and
+  `clarification_question`.
+- Agent steps cover intent analysis, planning, SQL generation, guardrail
+  validation, execution, self-check, and answer generation.
+- Deterministic planning covers monthly service comparison, monthly trip trend,
+  zone demand, vendor analysis, and payment analysis.
+- Ambiguous questions can return clarification without executing SQL.
+- Streamlit `Ask AI` renders an agent timeline and final answer before the
+  table/chart/export controls.
+
+Verification:
+
+- Host-local syntax compile passed for changed API and demo files.
+- Host-local `python -m pytest -p no:cacheprovider` passed with `20 passed,
+  2 skipped`; API smoke tests remain dependency-gated on the host.
+- `docker compose up -d --build api demo` rebuilt and restarted the API and
+  Streamlit demo.
+- HTTP `/api/v1/query` returned agent traces for:
+  - monthly Yellow/Green comparison over `gold_daily_kpis`
+  - monthly 2024 trip trend over `fact_trips` joined to `dim_date`
+  - ambiguous `trips` clarification without execution
+  - invalid join blocked by semantic join guardrails
+- Streamlit at `http://localhost:8501` returned HTTP `200`.
+- Demo container inspection confirmed the running app contains the agent
+  timeline UI.
+
 ## Last Verified Controlled Fact/Dim Exposure State
 
 Last controlled fact/dim exposure verification: `2026-04-24`.
@@ -410,6 +458,30 @@ Verification:
 - `docker compose restart api` restarted the running API service so Text-to-SQL
   requests use the updated prompt code.
 
+## Last Verified Common Demo Query Planner Fix
+
+Last common demo query planner verification: `2026-04-24`.
+
+Implemented behavior:
+
+- Text-to-SQL now short-circuits common monthly Yellow/Green trip comparison
+  questions to a deterministic `gold_daily_kpis` query before calling OpenAI.
+- The deterministic query handles Vietnamese phrasing such as
+  `so sánh chuyến đi xanh và vàng các tháng trong năm 2023`.
+- Prompt policy now states that aggregate marts are already denormalized and
+  should not be joined to dimensions unless an allowed join is listed.
+
+Verification:
+
+- Host-local `python -m pytest -p no:cacheprovider tests/test_semantic_catalog.py`
+  passed with `5 passed`.
+- Host-local `python -m pytest -p no:cacheprovider` passed with `20 passed,
+  2 skipped`; the skipped tests remain dependency-gated on the host.
+- API-container smoke script generated and validated a no-join query over
+  `gold_daily_kpis` for the Vietnamese monthly Yellow/Green comparison.
+- HTTP `/api/v1/query` returned rows for the same Vietnamese question after
+  `docker compose restart api`.
+
 For deterministic guardrail testing, `/api/v1/query` accepts an optional `sql`
 field. When `sql` is omitted, the API uses OpenAI to generate SQL from the
 question and then applies the same guardrails before execution.
@@ -437,6 +509,22 @@ changed.
 
 Open `http://localhost:8501`.
 
+Current visualization behavior:
+
+- Query results are always shown as a table first.
+- Charts render only after the user enables `Show chart`.
+- Latest results are kept in Streamlit session state per tab, so chart toggles
+  and selector changes do not clear the result panel during reruns.
+- Successful result panels include `Export CSV` for downloading the currently
+  displayed dataframe.
+- Monthly buckets named `month`, `year_month`, `pickup_month`, or
+  `dropoff_month` are displayed as `YYYY-MM`.
+- Numeric `month` values from fact/dim queries are treated as month buckets
+  before numeric casting, so line/bar charts can use them as the x-axis.
+- If `service_type` is present, it is selected by default as the chart series so
+  Yellow and Green Taxi are not connected into one line.
+- Line and bar charts aggregate repeated x-axis buckets before rendering.
+
 Recommended demo flow:
 
 1. Check the sidebar health status and Gold table count.
@@ -445,6 +533,39 @@ Recommended demo flow:
 4. Use `Guardrails` to show that Silver access is blocked.
 5. Use the auto chart selector and agent checks to show result diagnostics.
 6. Use `Ask AI` to generate SQL from a natural-language question when `OPENAI_API_KEY` is configured.
+
+## Last Verified Demo Visualization State
+
+Last demo visualization verification: `2026-04-24`.
+
+Implemented behavior:
+
+- Streamlit chart rendering now has a human-in-the-loop `Show chart` toggle.
+- Result state is persisted per tab, preventing Streamlit reruns from hiding the
+  chart/data panel after users change chart controls.
+- Monthly result columns are normalized to `YYYY-MM` before chart rendering.
+- Numeric `month` values `1` through `12` are now formatted as month buckets
+  before chart axis detection.
+- Duplicate monthly x-axis buckets are aggregated before line/bar rendering.
+- `service_type` is the default series when present, preventing Yellow/Green
+  comparison results from being drawn as one zig-zag line.
+- Result data can be exported with `Export CSV`.
+- API DuckDB S3 setup now attempts `load httpfs`, then `install httpfs`, and
+  skips S3 setup if the extension is unavailable so local Gold mart queries do
+  not fail after image rebuilds.
+
+Verification:
+
+- Host-local `python -m pytest -p no:cacheprovider` passed with `20 passed,
+  2 skipped`.
+- `docker compose up -d --build demo` rebuilt the image-copied Streamlit app.
+- HTTP `/api/v1/query` returned rows for
+  `so sánh chuyến đi xanh và vàng các tháng trong năm 2023`.
+- HTTP `/api/v1/query` returned 12 rows for
+  `So sánh chuyến đi trong các tháng trong năm 2024`.
+- Streamlit at `http://localhost:8501` returned HTTP `200`.
+- Demo container inspection confirmed the running image contains the
+  session-state chart UI, month-bucket fix, and `Export CSV`.
 
 ## MVP Verification Checklist
 

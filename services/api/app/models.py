@@ -56,9 +56,22 @@ class QueryRequest(BaseModel):
     )
 
 
+class AgentStep(BaseModel):
+    name: str
+    status: str
+    message: str
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
 class QueryResponse(BaseModel):
     summary: str
     sql: str
     columns: list[str]
     rows: list[dict[str, Any]]
     execution_ms: int
+    answer: str | None = None
+    agent_steps: list[AgentStep] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    confidence: str | None = None
+    requires_clarification: bool = False
+    clarification_question: str | None = None

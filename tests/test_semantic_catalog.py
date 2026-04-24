@@ -6,7 +6,7 @@ import yaml
 sys.path.insert(0, str(Path("services/api")))
 
 from app.catalog import load_schema_catalog  # noqa: E402
-from app.text_to_sql import render_catalog_for_prompt  # noqa: E402
+from app.text_to_sql import generate_sql_with_openai, render_catalog_for_prompt  # noqa: E402
 
 
 def test_semantic_catalog_has_tables() -> None:
@@ -71,6 +71,7 @@ def test_catalog_loader_and_prompt_include_semantic_metadata() -> None:
     assert len(fact_trips.allowed_joins) == 6
     assert "Planner policy:" in rendered
     assert "Aggregate marts:" in rendered
+    assert "Aggregate marts are already denormalized" in rendered
     assert "Grain:" in rendered
     assert "Metric: trip_count" in rendered
     assert "Allowed filters:" in rendered
@@ -100,3 +101,20 @@ def test_prompt_can_render_star_schema_planning_context() -> None:
     assert "fact_trips.pickup_zone_id = dim_zone.zone_id" in rendered
     assert "fact_trips.dropoff_zone_id = dim_zone.zone_id" in rendered
     assert "Do not reference disabled tables in executable SQL." in rendered
+
+
+def test_common_vietnamese_monthly_service_comparison_uses_daily_kpi_mart() -> None:
+    catalog = load_schema_catalog(Path("contracts/semantic_catalog.yaml"))
+
+    sql = generate_sql_with_openai(
+        question="so sánh chuyến đi xanh và vàng các tháng trong năm 2023",
+        catalog=catalog,
+        model="gpt-4.1-mini",
+        api_key="replace-me",
+        max_rows=100,
+    )
+
+    assert "FROM gold_daily_kpis" in sql
+    assert "JOIN" not in sql.upper()
+    assert "2023-01-01" in sql
+    assert "2024-01-01" in sql

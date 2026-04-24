@@ -8,6 +8,8 @@ pytest.importorskip("sqlglot")
 sys.path.insert(0, str(Path("services/api")))
 
 from app.models import SchemaField, SchemaJoin, SchemaResponse, SchemaTable  # noqa: E402
+from app.catalog import load_schema_catalog  # noqa: E402
+from app.text_to_sql import generate_sql_with_openai  # noqa: E402
 from app.sql_guardrails import SQLValidationError, validate_gold_select  # noqa: E402
 
 
@@ -268,3 +270,19 @@ def test_validate_gold_select_rejects_cross_join() -> None:
             star_catalog(),
             max_rows=100,
         )
+
+
+def test_common_monthly_service_comparison_sql_passes_guardrails() -> None:
+    semantic_catalog = load_schema_catalog(Path("contracts/semantic_catalog.yaml"))
+    sql = generate_sql_with_openai(
+        question="so sánh chuyến đi xanh và vàng các tháng trong năm 2023",
+        catalog=semantic_catalog,
+        model="gpt-4.1-mini",
+        api_key="replace-me",
+        max_rows=100,
+    )
+
+    result = validate_gold_select(sql, semantic_catalog, max_rows=100)
+
+    assert result.tables == {"gold_daily_kpis"}
+    assert "JOIN" not in result.sql.upper()

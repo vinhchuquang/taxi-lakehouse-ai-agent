@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 
 from openai import OpenAI
 
@@ -19,6 +20,10 @@ def generate_sql_with_openai(
     api_key: str,
     max_rows: int,
 ) -> str:
+    deterministic_sql = generate_common_mart_sql(question=question, catalog=catalog)
+    if deterministic_sql:
+        return deterministic_sql
+
     if not api_key or api_key == "replace-me":
         raise SQLGenerationError("OPENAI_API_KEY is not configured.")
 
@@ -33,6 +38,8 @@ def generate_sql_with_openai(
                     "Return exactly one SELECT statement and no prose. "
                     "Use only the provided execution-enabled curated Gold tables and fields. "
                     "Prefer aggregate marts for daily KPI, service-type trend, and zone-demand questions. "
+                    "Aggregate marts are already denormalized for their dimensions; do not join them "
+                    "to dimension tables unless an allowed join is explicitly listed. "
                     "Use fact and dimension tables only when they are explicitly execution-enabled "
                     "and the question needs vendor, payment type, pickup/dropoff role, or flexible fact/dim analysis. "
                     "Use only cataloged columns and cataloged join paths. "
@@ -71,6 +78,7 @@ def render_catalog_for_prompt(catalog: SchemaResponse, *, include_disabled: bool
         [
             "Planner policy:",
             "- Use aggregate marts first for common daily KPI, service type, and zone demand questions.",
+            "- Aggregate marts are already denormalized; do not join them to dimensions unless an allowed join is listed.",
             "- Use fact/dimension tables only when they are execution-enabled and the question requires star-schema detail.",
             "- Do not reference disabled tables in executable SQL.",
             "- Use only cataloged columns; do not invent columns.",
@@ -86,6 +94,85 @@ def render_catalog_for_prompt(catalog: SchemaResponse, *, include_disabled: bool
     _append_allowed_joins(lines, prompt_tables)
 
     return "\n".join(lines).strip()
+
+
+def generate_common_mart_sql(*, question: str, catalog: SchemaResponse) -> str | None:
+    normalized_question = _normalize_question(question)
+    if not _is_monthly_service_comparison(normalized_question):
+        return None
+
+    if not _has_execution_enabled_columns(
+        catalog,
+        table_name="gold_daily_kpis",
+        columns={"service_type", "pickup_date", "trip_count"},
+    ):
+        return None
+
+    year = _extract_year(normalized_question)
+    where_clause = ""
+    if year:
+        where_clause = (
+            f"\nWHERE pickup_date >= DATE '{year}-01-01'"
+            f"\n  AND pickup_date < DATE '{year + 1}-01-01'"
+        )
+
+    return (
+        "SELECT\n"
+        "  strftime(pickup_date, '%Y-%m') AS month,\n"
+        "  service_type,\n"
+        "  SUM(trip_count) AS trip_count\n"
+        "FROM gold_daily_kpis"
+        f"{where_clause}\n"
+        "GROUP BY 1, 2\n"
+        "ORDER BY 1, 2"
+    )
+
+
+def _normalize_question(question: str) -> str:
+    question = question.replace("đ", "d").replace("Đ", "D")
+    question = question.replace("Ä‘", "d").replace("Ä", "D")
+    decomposed = unicodedata.normalize("NFKD", question)
+    ascii_question = decomposed.encode("ascii", "ignore").decode("ascii")
+    return ascii_question.lower()
+
+
+def _is_monthly_service_comparison(question: str) -> bool:
+    has_monthly_intent = any(token in question for token in ("month", "monthly", "thang"))
+    has_trip_intent = any(token in question for token in ("trip", "trips", "chuyen di", "luot"))
+    has_service_intent = (
+        ("yellow" in question and "green" in question)
+        or ("vang" in question and "xanh" in question)
+        or "service type" in question
+    )
+    has_comparison_intent = any(
+        token in question
+        for token in ("compare", "comparison", "so sanh", "by service", "theo loai xe")
+    )
+    return has_monthly_intent and has_trip_intent and has_service_intent and has_comparison_intent
+
+
+def _extract_year(question: str) -> int | None:
+    match = re.search(r"\b(20\d{2})\b", question)
+    if not match:
+        return None
+    return int(match.group(1))
+
+
+def _has_execution_enabled_columns(
+    catalog: SchemaResponse,
+    *,
+    table_name: str,
+    columns: set[str],
+) -> bool:
+    table = next((item for item in catalog.tables if item.name == table_name), None)
+    if table is None or not table.execution_enabled:
+        return False
+
+    available_columns = {field.name for field in table.fields}
+    available_columns.update(table.dimensions)
+    available_columns.update(field.name for field in table.metrics)
+    available_columns.update(table.allowed_filters)
+    return columns <= available_columns
 
 
 def _append_table_group(lines: list[str], title: str, tables: list, table_type: str) -> None:

@@ -1,11 +1,12 @@
 from fastapi import FastAPI, HTTPException
 
+from app.agent import run_query_agent
 from app.catalog import load_schema_catalog
 from app.config import get_settings
 from app.models import HealthResponse, QueryRequest, QueryResponse, SchemaResponse
-from app.query_engine import QueryExecutionError, execute_readonly_query
-from app.sql_guardrails import SQLValidationError, validate_gold_select
-from app.text_to_sql import SQLGenerationError, generate_sql_with_openai
+from app.query_engine import QueryExecutionError
+from app.sql_guardrails import SQLValidationError
+from app.text_to_sql import SQLGenerationError
 
 app = FastAPI(
     title="Taxi Lakehouse AI Agent API",
@@ -36,26 +37,16 @@ def query_data(request: QueryRequest) -> QueryResponse:
     catalog = load_schema_catalog(settings.semantic_catalog)
 
     try:
-        candidate_sql = request.sql or generate_sql_with_openai(
-            question=request.question,
+        return run_query_agent(
+            request=request,
             catalog=catalog,
             model=settings.openai_model,
             api_key=settings.openai_api_key,
-            max_rows=request.max_rows,
+            duckdb_path=settings.duckdb_path,
         )
-        validated = validate_gold_select(candidate_sql, catalog, request.max_rows)
-        columns, rows, execution_ms = execute_readonly_query(validated.sql, settings.duckdb_path)
     except SQLGenerationError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except SQLValidationError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except QueryExecutionError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
-
-    return QueryResponse(
-        summary=f"Returned {len(rows)} rows from curated Gold data.",
-        sql=validated.sql,
-        columns=columns,
-        rows=rows,
-        execution_ms=execution_ms,
-    )

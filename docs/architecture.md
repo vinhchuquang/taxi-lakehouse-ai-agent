@@ -53,3 +53,12 @@ The AI layer must not query raw Bronze or partially cleaned Silver data. It
 should operate over curated Gold tables and semantic metadata, with SQL validated
 before execution. Fact/dimension queries must use explicit cataloged columns and
 approved semantic join paths.
+
+## Read-Only Agent Workflow
+
+The query layer is a read-only AI query agent rather than a write-capable or
+autonomous data agent. Its workflow is implemented directly in the FastAPI
+service: intent analysis, query-surface planning, SQL generation, guardrail
+validation, DuckDB execution, result self-checks, and answer synthesis. This
+keeps the agent behavior visible for demos while preserving the project's
+local-first, framework-light architecture.

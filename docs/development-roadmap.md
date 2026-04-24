@@ -324,6 +324,209 @@ Verification:
 - Airflow DAG details confirmed `taxi_monthly_pipeline` remains active and
   unpaused with schedule `0 0 15 * *`.
 
+## Phase 10C: Demo Visualization Human Review
+
+Status: completed on 2026-04-24.
+
+Goal: make Streamlit result visualization safer for monthly service comparisons
+and require an explicit human choice before chart rendering.
+
+Completed:
+
+- Normalize month bucket columns such as `month` and `year_month` to `YYYY-MM`
+  labels for display and chart axes.
+- Treat numeric `month` values `1` through `12` as month buckets before numeric
+  casting, so monthly fact/dim queries can render charts.
+- Aggregate duplicate x-axis buckets before charting so multiple service rows
+  for the same month do not produce zig-zag line charts.
+- Default chart series selection to `service_type` when present, keeping Yellow
+  and Green Taxi as separate lines or bars.
+- Add a `Show chart` toggle before visualization controls so users can inspect
+  SQL/results first and opt in to chart rendering.
+- Persist each tab's latest query result in Streamlit session state so toggling
+  chart controls does not lose the result panel during reruns.
+- Replace the chart type dropdown with a compact segmented control and group
+  axis/series selectors into one row for easier scanning.
+- Add a CSV export button for successful query results.
+- Keep table output always visible after a successful query.
+- Add an API `httpfs` fallback so local Gold mart queries continue to run after
+  rebuilding the API image even if the DuckDB extension cache is missing.
+
+Verification:
+
+- Host-local `python -m pytest -p no:cacheprovider` passed with `20 passed,
+  2 skipped`.
+- Rebuilt and restarted the demo with `docker compose up -d --build demo`.
+- HTTP `/api/v1/query` returned rows for the Vietnamese monthly Yellow/Green
+  comparison after restarting API.
+- HTTP `/api/v1/query` returned 12 monthly rows for
+  `So sánh chuyến đi trong các tháng trong năm 2024`.
+- Streamlit demo returned HTTP `200`.
+- Demo container inspection confirmed the session-state chart UI is present in
+  `/app/app.py`.
+
+## Phase 11A: Agent Gap And Target Contract
+
+Status: completed on 2026-04-24.
+
+Goal: clarify that the current implementation started as Text-to-SQL plus
+guardrails, then define the read-only agent target without widening project
+scope.
+
+Completed:
+
+- Document the gap between a SQL generator and a read-only query agent.
+- Define agent v1 as a controlled workflow: intent analysis, planning, SQL
+  generation, guardrail validation, execution, self-check, and answer synthesis.
+- Preserve invariants: Gold-only access, read-only SQL, no DML/DDL, no
+  LangChain/LangGraph/Vanna, and no write-capable agent behavior.
+- Update docs wording to describe the system as a read-only AI query agent, not
+  an autonomous data-writing agent.
+
+Verification:
+
+- README, architecture docs, roadmap, and runbook use consistent terminology.
+
+## Phase 11B: Agent Response Contract
+
+Status: completed on 2026-04-24.
+
+Goal: extend `/api/v1/query` responses with agent trace metadata while keeping
+existing response fields stable.
+
+Completed:
+
+- Add an `AgentStep` response model with `name`, `status`, `message`, and
+  optional metadata.
+- Extend `QueryResponse` with optional `answer`, `agent_steps`, `warnings`,
+  `confidence`, `requires_clarification`, and `clarification_question`.
+- Keep existing fields `summary`, `sql`, `columns`, `rows`, and `execution_ms`
+  for backward compatibility.
+
+Verification:
+
+- Existing API tests continue to pass.
+- New tests confirm successful query responses include agent steps.
+- Host-local full test suite passed with dependency-gated API tests skipped.
+
+## Phase 11C: Agent Orchestrator State Machine
+
+Status: completed on 2026-04-24.
+
+Goal: move `/api/v1/query` through a small internal state machine instead of a
+single Text-to-SQL call path.
+
+Completed:
+
+- Add an API-local orchestrator without adding external agent frameworks.
+- Run the query workflow through intent analysis, planning, SQL generation,
+  validation, execution, and self-check steps.
+- Record each step in `agent_steps`.
+- Preserve SQL override behavior by marking SQL generation as `provided_sql`.
+
+Verification:
+
+- Valid mart and fact/dim queries return complete traces.
+- Invalid SQL still stops before execution.
+- HTTP smoke checks confirmed successful responses include full agent traces.
+
+## Phase 11D: Deterministic Intent And Planning
+
+Status: completed on 2026-04-24.
+
+Goal: make the agent choose the intended query surface before asking the LLM to
+write SQL.
+
+Completed:
+
+- Add a deterministic classifier for monthly trends, service comparisons, zone
+  demand, vendor analysis, payment analysis, and pickup/dropoff analysis.
+- Record selected tables, query surface, and planning reason.
+- Keep aggregate marts as the fast path for common trend and zone questions.
+- Use star-schema planning only when the question requires flexible fact/dim
+  analysis.
+
+Verification:
+
+- Monthly Yellow/Green questions plan to `gold_daily_kpis`.
+- Zone demand questions plan to `gold_zone_demand`.
+- Vendor/payment questions plan to `fact_trips` plus dimensions.
+- HTTP smoke checks confirmed monthly service and monthly trend questions use
+  deterministic planner paths.
+
+## Phase 11E: Self-Check And Hybrid Answer
+
+Status: completed on 2026-04-24.
+
+Goal: make the agent evaluate query results and return a human-readable answer,
+not only rows.
+
+Completed:
+
+- Add deterministic checks for empty results, max-row caps, negative numeric
+  metrics, unusual date ranges, and missing expected grouping columns.
+- Always return a deterministic answer summary.
+- Optionally use OpenAI to synthesize a natural-language answer from the
+  already-executed SQL and returned rows when an API key is configured.
+- Do not let answer synthesis generate new SQL or access external data.
+
+Verification:
+
+- Empty and capped results produce warnings.
+- Normal results include `answer` and confidence.
+- Missing API key still returns a deterministic answer.
+- OpenAI answer synthesis is opt-in through `OPENAI_ANSWER_SYNTHESIS` so demos
+  default to deterministic answers grounded in returned rows.
+
+## Phase 11F: Safe Clarification And One Retry
+
+Status: completed on 2026-04-24.
+
+Goal: add controlled agent behavior for ambiguity and recoverable generation
+errors without weakening guardrails.
+
+Completed:
+
+- Return `requires_clarification=true` when a natural-language question is too
+  ambiguous to execute safely.
+- Avoid execution when clarification is required.
+- Allow at most one LLM repair attempt for generated SQL that fails validation
+  or execution.
+- Re-validate repaired SQL with the same guardrails.
+- Never repair explicit DML/DDL or user-provided SQL into a different query.
+
+Verification:
+
+- Ambiguous questions return clarification.
+- Generated SQL can be repaired once.
+- DML/DDL and invalid joins remain blocked.
+- HTTP smoke check confirmed ambiguous `trips` returns clarification without
+  execution.
+
+## Phase 11G: Streamlit Agent Timeline UI
+
+Status: completed on 2026-04-24.
+
+Goal: make the demo visibly show where the agent behavior happens.
+
+Completed:
+
+- Add an agent timeline panel in `Ask AI` for intent, plan, SQL, guardrail,
+  execution, self-check, and answer steps.
+- Show the final answer above the result table.
+- Show clarification prompts instead of table/chart output when the API asks
+  for clarification.
+- Preserve SQL expander, result table, chart toggle, CSV export, SQL override,
+  and guardrail demos.
+
+Verification:
+
+- Streamlit returns HTTP `200`.
+- Timeline renders when `agent_steps` are present.
+- Existing table, chart, and export flows still work.
+- Demo container inspection confirmed the running Streamlit app contains the
+  agent timeline UI.
+
 ## Documentation And Handoff Rule
 
 After each meaningful phase or working session, update the durable project

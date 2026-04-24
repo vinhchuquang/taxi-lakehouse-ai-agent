@@ -30,6 +30,7 @@ the repo first.
 | ingestion implementation and tests | `tests/test_tlc_ingestion.py` | Start here for ingestion regressions |
 | AI-visible semantic metadata | `contracts/semantic_catalog.yaml` | Required before exposing new AI-queryable tables |
 | SQL safety and query restrictions | `services/api/app/sql_guardrails.py` | Main guardrail logic |
+| read-only query agent orchestration | `services/api/app/agent.py` | Intent, planning, SQL, validation, execution, self-check, answer trace |
 | semantic catalog loading in API | `services/api/app/catalog.py` | Reads and validates catalog for app usage |
 | prompt assembly for Text-to-SQL | `services/api/app/text_to_sql.py` | Main LLM prompt rendering path |
 | API entrypoints and query execution path | `services/api/app/` | Inspect alongside guardrails and catalog |
@@ -48,7 +49,7 @@ the repo first.
   for the star schema.
 - Controlled AI querying over the Gold star schema is implemented for the
   current MVP. Semantic metadata, column/table guardrails, join guardrails,
-  prompt planning, and fact/dim execution are in place.
+  prompt planning, fact/dim execution, and read-only agent tracing are in place.
 
 ## Session Closeout
 
@@ -152,11 +153,16 @@ becomes very common, a Gold aggregate mart can still be added as a fast path.
 - `contracts/semantic_catalog.yaml` is the AI-visible Gold catalog.
 - `execution_enabled` in the semantic catalog controls whether a cataloged Gold
   table is currently allowed in prompt generation and `/api/v1/query`.
+- `services/api/app/agent.py` orchestrates the read-only agent workflow:
+  intent analysis, planning, SQL generation, guardrail validation, execution,
+  self-check, and answer generation.
 - `services/api/app/sql_guardrails.py` blocks unsafe SQL.
 - Guardrails currently validate table execution status, known columns, table
   aliases, wildcard restrictions for detailed Gold tables, allowed join paths,
   and query limits.
 - `services/api/app/text_to_sql.py` renders semantic metadata into the LLM prompt.
+  Keep Text-to-SQL generation behind the agent orchestrator rather than calling
+  it directly from API endpoints.
 - Runtime prompt rendering includes execution-enabled tables. Use
   `include_disabled=True` only for planning/tests if a future phase catalogs
   tables before exposing them.
