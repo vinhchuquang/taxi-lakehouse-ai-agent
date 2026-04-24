@@ -120,6 +120,27 @@ def test_validate_gold_select_caps_existing_limit() -> None:
     assert result.sql == "SELECT * FROM gold_daily_kpis LIMIT 50"
 
 
+def test_validate_gold_select_does_not_limit_scalar_aggregate() -> None:
+    result = validate_gold_select(
+        "select sum(trip_count) as total_trips from gold_daily_kpis limit 1000",
+        catalog(),
+        max_rows=50,
+    )
+
+    assert result.sql == "SELECT SUM(trip_count) AS total_trips FROM gold_daily_kpis"
+
+
+def test_validate_gold_select_limits_grouped_aggregate() -> None:
+    result = validate_gold_select(
+        "select service_type, sum(trip_count) as total_trips "
+        "from gold_daily_kpis group by service_type",
+        catalog(),
+        max_rows=50,
+    )
+
+    assert result.sql.endswith("LIMIT 50")
+
+
 def test_validate_gold_select_allows_cataloged_columns() -> None:
     result = validate_gold_select(
         "select k.pickup_date, sum(k.trip_count) as trips "

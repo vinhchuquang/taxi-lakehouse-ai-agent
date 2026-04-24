@@ -239,6 +239,10 @@ def _table_aliases(
 
 
 def _apply_limit(expression: exp.Select, max_rows: int) -> None:
+    if _is_scalar_aggregate(expression):
+        expression.set("limit", None)
+        return
+
     limit_expression = expression.args.get("limit")
     if limit_expression is None:
         expression.limit(max_rows, copy=False)
@@ -257,3 +261,9 @@ def _apply_limit(expression: exp.Select, max_rows: int) -> None:
 
     if current_limit_value > max_rows:
         expression.limit(max_rows, copy=False)
+
+
+def _is_scalar_aggregate(expression: exp.Select) -> bool:
+    has_aggregate = any(projection.find(exp.AggFunc) for projection in expression.expressions)
+    has_grouping = expression.args.get("group") is not None
+    return has_aggregate and not has_grouping
