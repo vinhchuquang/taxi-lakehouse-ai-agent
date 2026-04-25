@@ -207,6 +207,10 @@ Smoke test API bằng SQL override:
 
 Trạng thái verify và caveats gần nhất nằm trong `docs/runbook.md`.
 
+## Push Test
+
+Short documentation update used to verify GitHub push from the local project workspace.
+
 ## Tài Liệu Thêm
 
 - `docs/architecture.md`: kiến trúc tổng quan
