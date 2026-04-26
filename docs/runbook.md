@@ -174,6 +174,39 @@ dataset window and verified:
   cartesian join blocking
 - deterministic answer grounding without requiring OpenAI answer synthesis
 
+## Last Verified Phase 15 Demo Scenario State
+
+Last demo scenario verification: `2026-04-26`.
+
+Phase 15 outputs:
+
+- `docs/demo-scenarios.md`
+- Streamlit demo prompt and default SQL updates in `services/demo/app.py`
+
+Implemented behavior:
+
+- The Ask AI tab exposes stable demo prompts for `2024-H1`, including monthly
+  Yellow/Green comparison, top pickup zones, vendor analysis, payment
+  distribution, pickup/dropoff borough analysis, average distance, and an
+  ambiguous clarification prompt.
+- The SQL Test default query is filtered to `2024-01-01` through `2024-06-30`.
+- The Star Schema default vendor query is filtered to `2024-01-01` through
+  `2024-06-30`.
+- The official demo scenario pack defines 12 defense/product demo scenarios.
+
+Verification:
+
+- `docker compose up -d --build demo` rebuilt and restarted the demo. Compose
+  also rebuilt/recreated the API image because the demo depends on the API
+  service.
+- `GET http://localhost:8000/healthz` returned `status=ok`.
+- Streamlit returned HTTP `200` at `http://localhost:8501`.
+- Demo container inspection confirmed `DEMO_QUESTIONS`, `2024-06-30`, and the
+  Vietnamese monthly service prompt are present in `/app/app.py`.
+- API smoke check for `Top pickup zones by trip count in 2024 H1` returned rows
+  from `gold_zone_demand`; top sample row was `Midtown Center`, `Manhattan`,
+  with `941328` trips.
+
 ## Last Verified MVP State
 
 Last local end-to-end verification: `2026-04-22`.

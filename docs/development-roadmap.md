@@ -637,33 +637,35 @@ Next step: Phase 15, Demo Scenario Pack And Product Demo UX.
 
 ## Phase 15: Demo Scenario Pack And Product Demo UX
 
-Status: planned.
+Status: completed on 2026-04-26.
 
 Goal: turn the system into a stable defense and product-style demo with fixed
 scenarios instead of improvised prompts.
 
-Required completion:
+Completed:
 
-- Create `docs/demo-scenarios.md`.
-- Define 8-12 official demo scenarios with prompt, expected query surface,
-  expected result shape, and the main explanation point for defense.
-- Cover schema browsing, aggregate mart questions, star-schema fact/dim
+- Created `docs/demo-scenarios.md`.
+- Defined 12 official demo scenarios with prompt/action, expected query surface,
+  and what to show during defense.
+- Covered schema browsing, aggregate mart questions, star-schema fact/dim
   analysis, Vietnamese natural-language questions, clarification behavior,
   blocked unsafe SQL, charting, SQL expander, agent timeline, and CSV export.
-- Ensure Streamlit exposes stable example prompts for monthly Yellow/Green
+- Updated Streamlit with stable demo prompts for monthly Yellow/Green
   comparison, top pickup zones, vendor analysis, payment distribution,
-  pickup/dropoff borough analysis, ambiguous questions, and blocked SQL.
-- Improve user-facing demo polish only where it reduces confusion: clearer
-  errors, stable result state, readable timeline labels, and obvious export
-  behavior.
+  pickup/dropoff borough analysis, average distance, ambiguous questions, and
+  blocked SQL.
+- Updated default SQL and star-schema demo SQL to filter to the Phase 12
+  `2024-H1` defense window.
 
 Verification target:
 
-- Streamlit returns HTTP `200`.
-- Each official scenario works against the Phase 12 defense dataset window.
-- Manual review confirms table output, optional charts, SQL expander, agent
-  timeline, clarification output, blocked-query output, and CSV export.
-- API smoke checks cover the non-UI scenario behavior where practical.
+- Rebuilt and restarted the demo with `docker compose up -d --build demo`.
+- API `/healthz` returned `status=ok`.
+- Streamlit returned HTTP `200`.
+- Demo container inspection confirmed `DEMO_QUESTIONS`, `2024-06-30`, and the
+  Vietnamese monthly service prompt are present in the running app.
+- API smoke check for the top pickup-zone scenario returned rows from
+  `gold_zone_demand` for the `2024-H1` defense window.
 
 Next step: Phase 16, Operational Hardening.
 

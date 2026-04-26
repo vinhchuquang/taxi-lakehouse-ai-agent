@@ -11,6 +11,7 @@ import streamlit as st
 API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000").rstrip("/")
 DEFAULT_SQL = """select service_type, pickup_date, trip_count
 from gold_daily_kpis
+where pickup_date between DATE '2024-01-01' and DATE '2024-06-30'
 order by pickup_date, service_type"""
 STAR_SCHEMA_SQL = """select
     v.vendor_name,
@@ -19,10 +20,21 @@ STAR_SCHEMA_SQL = """select
 from fact_trips as f
 join dim_vendor as v
     on f.vendor_id = v.vendor_id
+where f.pickup_date between DATE '2024-01-01' and DATE '2024-06-30'
 group by v.vendor_name
 order by trip_count desc"""
 GUARDRAIL_SQL = "select * from silver_trips_unified"
 FACT_WILDCARD_SQL = "select * from fact_trips"
+DEMO_QUESTIONS = (
+    "So sánh số chuyến Yellow Taxi và Green Taxi theo tháng trong nửa đầu năm 2024",
+    "Top pickup zones by trip count in 2024 H1",
+    "Show vendor trip counts in 2024 H1",
+    "Payment type distribution in 2024 H1",
+    "Pickup borough demand in 2024 H1",
+    "Dropoff borough demand in 2024 H1",
+    "Average trip distance by service in 2024 H1",
+    "trips",
+)
 DATE_NAME_HINTS = ("date", "_at", "timestamp", "datetime")
 DATE_PART_COLUMNS = {"year", "month", "day", "quarter", "day_of_week"}
 MONTH_BUCKET_COLUMNS = {"month", "year_month", "pickup_month", "dropoff_month"}
@@ -475,9 +487,10 @@ tab_ai, tab_sql, tab_star, tab_guardrails, tab_schema = st.tabs(
 )
 
 with tab_ai:
+    selected_question = st.selectbox("Demo prompt", DEMO_QUESTIONS)
     question = st.text_area(
         "Question",
-        value="What are daily trip counts and fare amounts by taxi service?",
+        value=selected_question,
         height=120,
     )
     if st.button("Run AI query", type="primary"):
