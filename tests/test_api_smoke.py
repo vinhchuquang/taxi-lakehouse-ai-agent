@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 import sys
 from types import SimpleNamespace
 
@@ -140,6 +141,7 @@ tables:
         lambda: SimpleNamespace(
             duckdb_path=str(duckdb_path),
             semantic_catalog=catalog_path,
+            query_audit_log_path=str(tmp_path / "query_audit.jsonl"),
             openai_api_key="replace-me",
             openai_model="gpt-4.1-mini",
         ),
@@ -178,6 +180,14 @@ def test_query_endpoint_allows_gold_select_with_sql_override(tmp_path, monkeypat
         "answer",
     ]
     assert payload["agent_steps"][2]["status"] == "provided_sql"
+
+    audit_events = [
+        json.loads(line)
+        for line in (tmp_path / "query_audit.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
+    assert audit_events[-1]["status"] == "success"
+    assert audit_events[-1]["question"] == "Show daily trips"
+    assert audit_events[-1]["execution_ms"] is not None
 
 
 def test_schema_endpoint_returns_full_catalog_metadata(tmp_path, monkeypatch) -> None:
@@ -295,6 +305,13 @@ def test_query_endpoint_rejects_ddl(tmp_path, monkeypatch) -> None:
     assert response.status_code == 400
     assert "Only SELECT" in response.json()["detail"]
 
+    audit_events = [
+        json.loads(line)
+        for line in (tmp_path / "query_audit.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
+    assert audit_events[-1]["status"] == "blocked"
+    assert audit_events[-1]["error_type"] == "SQLValidationError"
+
 
 def test_query_endpoint_returns_clarification_for_ambiguous_question(tmp_path, monkeypatch) -> None:
     client = build_test_client(tmp_path, monkeypatch)
@@ -314,3 +331,10 @@ def test_query_endpoint_returns_clarification_for_ambiguous_question(tmp_path, m
     assert payload["rows"] == []
     assert payload["sql"] == ""
     assert payload["agent_steps"][0]["status"] == "needs_clarification"
+
+    audit_events = [
+        json.loads(line)
+        for line in (tmp_path / "query_audit.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
+    assert audit_events[-1]["status"] == "clarification"
+    assert audit_events[-1]["requires_clarification"] is True

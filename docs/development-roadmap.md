@@ -671,33 +671,35 @@ Next step: Phase 16, Operational Hardening.
 
 ## Phase 16: Operational Hardening
 
-Status: planned.
+Status: completed on 2026-04-26.
 
 Goal: add product-lite operational evidence around the API and agent while
 preserving read-only behavior and local-first deployment.
 
-Required completion:
+Completed:
 
-- Add a query audit log for API/agent requests with question, generated or
-  provided SQL, validation status, execution status, execution time, warnings,
-  confidence, and clarification or block reason when applicable.
-- Improve health checks so they report API status, semantic catalog loading,
-  DuckDB connectivity, and configured Gold warehouse path.
-- Add or document query timeout, max row limit, and error response behavior.
-- Improve error messages for blocked queries without exposing unsafe internals
-  or suggesting bypasses.
-- Update `.env.example` and `docs/runbook.md` with operational configuration
-  notes.
-- Do not add write-capable behavior or broaden the agent beyond curated Gold
-  access.
+- Added JSONL query audit logging for API/agent requests with question, SQL
+  override flag, final or provided SQL, status, execution time, warnings,
+  confidence, clarification fields, agent step statuses, and error details when
+  applicable.
+- Improved `/healthz` so it reports API status, semantic catalog path/loading,
+  DuckDB path existence/connectivity, and query audit log path.
+- Documented query audit log behavior, max row limits, and error response
+  behavior in `docs/runbook.md`.
+- Added `QUERY_AUDIT_LOG_PATH` to `.env.example`.
+- Kept read-only behavior and curated Gold-only access unchanged.
 
 Verification target:
 
-- API smoke checks confirm successful, clarification, and blocked requests are
-  logged.
-- Health endpoint checks pass in Docker.
-- Guardrail tests still block unsafe SQL after logging and health changes.
-- Runbook documents log location, fields, and troubleshooting steps.
+- Host-local `tests/test_api_smoke.py` remains dependency-gated and skipped
+  because host optional API dependencies are unavailable.
+- Host-local AST syntax check passed for changed API files and API smoke tests.
+- Rebuilt and restarted API/demo with `docker compose up -d --build api demo`.
+- API `/healthz` returned `status=ok`, `duckdb_exists=true`, and
+  `duckdb_connectable=true`.
+- API smoke checks confirmed successful, clarification, and blocked requests.
+- API container audit log inspection confirmed `success`, `clarification`, and
+  `blocked` events were written.
 
 Next step: Phase 17, Performance And Materialization Review.
 

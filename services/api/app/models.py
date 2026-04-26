@@ -7,6 +7,10 @@ class HealthResponse(BaseModel):
     status: str
     duckdb_path: str
     semantic_catalog_loaded: bool
+    semantic_catalog_path: str | None = None
+    duckdb_exists: bool | None = None
+    duckdb_connectable: bool | None = None
+    query_audit_log_path: str | None = None
 
 
 class SchemaField(BaseModel):

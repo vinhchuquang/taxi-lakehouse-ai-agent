@@ -207,6 +207,63 @@ Verification:
   from `gold_zone_demand`; top sample row was `Midtown Center`, `Manhattan`,
   with `941328` trips.
 
+## Last Verified Phase 16 Operational Hardening State
+
+Last operational hardening verification: `2026-04-26`.
+
+Implemented behavior:
+
+- API query audit events are written as JSON Lines.
+- Default audit path: `/data/warehouse/query_audit.jsonl`
+- Config variable: `QUERY_AUDIT_LOG_PATH`
+- `/healthz` reports:
+  - `status`
+  - `duckdb_path`
+  - `semantic_catalog_loaded`
+  - `semantic_catalog_path`
+  - `duckdb_exists`
+  - `duckdb_connectable`
+  - `query_audit_log_path`
+
+Audit event fields:
+
+- `timestamp`
+- `status`: `success`, `clarification`, `blocked`, `generation_error`, or
+  `execution_error`
+- `question`
+- `has_sql_override`
+- `requested_max_rows`
+- `sql`
+- `execution_ms`
+- `warnings`
+- `confidence`
+- `requires_clarification`
+- `clarification_question`
+- `agent_step_statuses`
+- `error_type`
+- `error_detail`
+
+Verification:
+
+- Host-local `tests/test_api_smoke.py` remained dependency-gated and skipped
+  because optional API runtime dependencies are unavailable on the host.
+- Host-local AST syntax check passed for changed API files and API smoke tests.
+- `docker compose up -d --build api demo` rebuilt and restarted API/demo.
+- `GET http://localhost:8000/healthz` returned `status=ok`,
+  `duckdb_exists=true`, and `duckdb_connectable=true`.
+- A successful Gold query wrote a `success` audit event.
+- Ambiguous `trips` wrote a `clarification` audit event.
+- Unsafe `drop table gold_daily_kpis` returned HTTP `400` and wrote a
+  `blocked` audit event with `error_type=SQLValidationError`.
+
+Operational notes:
+
+- Audit logging intentionally does not store result rows.
+- Audit logging failure does not fail a read-only query.
+- The API request model still enforces `max_rows` between `1` and `1000`.
+- Guardrails still enforce read-only, Gold-only, cataloged columns, detailed
+  wildcard restrictions, and allowed joins before execution.
+
 ## Last Verified MVP State
 
 Last local end-to-end verification: `2026-04-22`.

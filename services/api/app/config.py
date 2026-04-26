@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     openai_model: str = "gpt-4.1-mini"
     duckdb_path: str = "/data/warehouse/analytics.duckdb"
     semantic_catalog_path: str = "/app/contracts/semantic_catalog.yaml"
+    query_audit_log_path: str = "/data/warehouse/query_audit.jsonl"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
