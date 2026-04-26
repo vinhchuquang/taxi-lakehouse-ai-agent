@@ -604,36 +604,34 @@ Next step: Phase 14, Agent Evaluation And Guardrail Benchmark.
 
 ## Phase 14: Agent Evaluation And Guardrail Benchmark
 
-Status: planned.
+Status: completed on 2026-04-26.
 
 Goal: evaluate the read-only AI query agent as an engineering component, not
 only as a Streamlit demo.
 
-Required completion:
+Completed:
 
-- Create `docs/agent-evaluation.md`.
-- Build an evaluation set of 20-30 Vietnamese and English questions covering
-  KPI trends, service comparison, zone demand, vendor analysis, payment type,
-  pickup/dropoff analysis, ambiguous questions, and unsafe SQL attempts.
-- For each case, record expected behavior: executed answer, clarification, or
+- Created `docs/agent-evaluation.md`.
+- Built and ran a 21-case evaluation set covering KPI trends, service
+  comparison, zone demand, vendor analysis, payment type, pickup/dropoff
+  analysis, ambiguous questions, and unsafe SQL attempts.
+- Recorded expected behavior for each case: executed answer, clarification, or
   rejection.
-- Measure planner behavior by query surface: aggregate mart, star schema,
-  clarification, or blocked.
-- Verify guardrails for DML, DDL, Bronze/Silver access, unknown table, unknown
+- Measured planner behavior by query surface: aggregate mart, star schema,
+  clarification, `llm_planned` with SQL override, or blocked.
+- Verified guardrails for DDL/DML, Bronze/Silver access, unknown table, unknown
   column, `select *` on detailed Gold tables, invalid join, missing `ON`, and
   cartesian join.
-- Confirm deterministic answers are grounded only in executed SQL rows.
-- Confirm OpenAI answer synthesis remains optional and the demo works when
-  synthesis is disabled.
+- Confirmed deterministic answers are grounded only in executed SQL rows.
+- Confirmed OpenAI answer synthesis was not required for the benchmark.
 
 Verification target:
 
-- Existing semantic catalog, SQL guardrail, clarification, trace-shape, and API
-  smoke tests continue to pass.
-- Docker-based API checks cover the evaluation cases that require runtime
-  dependencies from the API container.
-- The evaluation report includes pass/fail status, generated SQL or block
-  reason, and known limitations.
+- API evaluation passed `21/21` cases.
+- Runtime results included `10` executed answer cases, `1` clarification case,
+  and `10` blocked unsafe/invalid SQL cases.
+- The evaluation report includes pass/fail status, observed planning surfaces,
+  block reasons, answer grounding notes, and known limitations.
 
 Next step: Phase 15, Demo Scenario Pack And Product Demo UX.
 

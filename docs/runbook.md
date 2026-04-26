@@ -152,6 +152,28 @@ The report uses the Phase 12 defense dataset window, `2024-01-01` through
   read-only agent
 - known caveats and out-of-scope areas
 
+## Last Verified Phase 14 Agent Evaluation State
+
+Last agent evaluation verification: `2026-04-26`.
+
+Phase 14 output:
+
+- `docs/agent-evaluation.md`
+
+The runtime API benchmark used `POST /api/v1/query` against the Phase 12 defense
+dataset window and verified:
+
+- `21` total evaluation cases
+- `21` passed expected behavior
+- `10` executed answer cases
+- `1` clarification case
+- `10` blocked unsafe or invalid SQL cases
+- aggregate mart, star-schema, clarification, and blocked query surfaces
+- DDL/DML blocking, Bronze/Silver blocking, unknown table/column blocking,
+  detailed wildcard blocking, invalid join blocking, missing-`ON` blocking, and
+  cartesian join blocking
+- deterministic answer grounding without requiring OpenAI answer synthesis
+
 ## Last Verified MVP State
 
 Last local end-to-end verification: `2026-04-22`.
