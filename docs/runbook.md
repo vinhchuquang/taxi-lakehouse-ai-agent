@@ -264,6 +264,126 @@ Operational notes:
 - Guardrails still enforce read-only, Gold-only, cataloged columns, detailed
   wildcard restrictions, and allowed joins before execution.
 
+## Last Verified Phase 17 Performance Benchmark State
+
+Last Phase 17 verification: `2026-04-27`.
+
+Phase 17 output added:
+
+- `docs/performance-report.md`
+- `scripts/benchmark_phase17.py`
+
+Benchmark command:
+
+```bash
+python scripts/benchmark_phase17.py --repeats 5 --warmup 1
+```
+
+The benchmark uses `/api/v1/query` with SQL override for five representative
+queries over the Phase 12 defense window:
+
+- daily KPI trend from `gold_daily_kpis`
+- zone demand ranking from `gold_zone_demand`
+- vendor aggregation from `fact_trips` joined to `dim_vendor`
+- payment-type aggregation from `fact_trips` joined to `dim_payment_type`
+- pickup/dropoff borough aggregation from `fact_trips` joined to two
+  `dim_zone` roles
+
+Current materialization review:
+
+- Silver defaults to `table`.
+- Gold defaults to `view`.
+- `gold_daily_kpis` and `gold_zone_demand` are semantic fast paths for planning
+  and guardrails, but they are not physically persisted as precomputed DuckDB
+  tables in the current dbt config.
+- No materialization change was made. The measured latencies are acceptable for
+  the local thesis/demo workflow, and persisting `fact_trips` would duplicate
+  the largest table without a clear need.
+
+Benchmark results:
+
+- `P01` daily KPI trend over `gold_daily_kpis`: median `962 ms`, min `914 ms`,
+  max `2999 ms`, `364` rows.
+- `P02` zone demand ranking over `gold_zone_demand`: median `1265 ms`, min
+  `1171 ms`, max `1415 ms`, `25` rows.
+- `P03` vendor aggregation over `fact_trips` plus `dim_vendor`: median
+  `3701 ms`, min `3348 ms`, max `4820 ms`, `3` rows.
+- `P04` payment-type aggregation over `fact_trips` plus `dim_payment_type`:
+  median `4062 ms`, min `3347 ms`, max `4416 ms`, `6` rows.
+- `P05` pickup/dropoff zone joins over `fact_trips` plus two `dim_zone` roles:
+  median `1078 ms`, min `1062 ms`, max `1256 ms`, `50` rows.
+
+Verification completed:
+
+- `docker compose up -d` started the existing stack without rebuild.
+- `docker compose ps` showed Postgres, MinIO, API, demo, Airflow scheduler, and
+  Airflow webserver running.
+- `GET http://localhost:8000/healthz` returned `status=ok`,
+  `duckdb_exists=true`, and `duckdb_connectable=true`.
+- Streamlit returned HTTP `200`.
+- Airflow `/health` returned HTTP `200`.
+- Phase 17 benchmark completed and wrote
+  `docs/performance-benchmark-results.json`.
+- Valid API smoke query over `gold_daily_kpis` returned 5 rows.
+- DDL smoke query `drop table gold_daily_kpis` returned HTTP `400`.
+- AST syntax parse for `scripts/benchmark_phase17.py` passed.
+- `python -m pytest -p no:cacheprovider tests/test_semantic_catalog.py
+  tests/test_sql_guardrails.py` returned `5 passed, 1 skipped`; SQL guardrail
+  tests remained dependency-gated on the host.
+- Full host `python -m pytest -p no:cacheprovider` returned `20 passed, 2
+  skipped`; API and SQL guardrail tests remained dependency-gated on the host.
+
+Next action:
+
+- Phase 18: add CI/CD and release packaging documentation. Revisit Gold
+  materialization only if future benchmark runs show a concrete demo latency
+  problem.
+
+## Last Verified Phase 18 Release Packaging State
+
+Last Phase 18 verification: `2026-04-27`.
+
+Phase 18 outputs:
+
+- `.github/workflows/ci.yml`
+- `docs/release-checklist.md`
+- `scripts/release_check.py`
+
+Implemented behavior:
+
+- CI installs the package with dev dependencies, runs the Python test suite, and
+  runs the release consistency check.
+- `scripts/release_check.py` verifies required thesis/release docs, required
+  `.env.example` keys, known local port notes, release checklist coverage,
+  untracked environment secrets, and obvious documentation secret patterns.
+- `docs/release-checklist.md` documents pre-defense/final-submission checks,
+  startup commands, reset notes, local ports, change-type-specific mandatory
+  checks, API smoke checks, official demo scenarios, and final handoff criteria.
+
+Verification:
+
+- `python scripts/release_check.py` passed.
+- Syntax parse passed for `scripts/release_check.py` and
+  `scripts/benchmark_phase17.py`.
+- `python -m pytest -p no:cacheprovider` returned `20 passed, 2 skipped`; API
+  and SQL guardrail tests remained dependency-gated on the host.
+- `docker compose ps` showed Postgres, MinIO, API, demo, Airflow scheduler, and
+  Airflow webserver running.
+- API `/healthz` returned `status=ok`, `duckdb_exists=true`, and
+  `duckdb_connectable=true`.
+- Streamlit returned HTTP `200`.
+- Airflow `/health` returned HTTP `200`.
+- Release API smoke checks returned:
+  - HTTP `200` for a valid `gold_daily_kpis` query
+  - HTTP `400` for `drop table gold_daily_kpis`
+  - HTTP `400` for `select * from fact_trips`
+
+Next action:
+
+- Phase 19: add security-lite and governance notes. Keep production auth,
+  multi-tenant RBAC, write agents, and cloud deployment out of scope unless the
+  project scope changes.
+
 ## Last Verified MVP State
 
 Last local end-to-end verification: `2026-04-22`.

@@ -705,24 +705,72 @@ Next step: Phase 17, Performance And Materialization Review.
 
 ## Phase 17: Performance And Materialization Review
 
-Status: planned.
+Status: completed on 2026-04-27.
 
 Goal: make local demo responsiveness measurable and make materialization
 choices defensible.
 
 Required completion:
 
-- Create `docs/performance-report.md`.
+- Create `docs/performance-report.md`. Completed on 2026-04-27 with benchmark
+  scope, measured results, materialization review, decision, caveats, and future
+  materialization option.
 - Benchmark representative API queries over the Phase 12 dataset window:
   daily KPI trend, zone demand ranking, vendor aggregation, payment-type
-  aggregation, and pickup/dropoff zone joins.
+  aggregation, and pickup/dropoff zone joins. Benchmark harness added at
+  `scripts/benchmark_phase17.py`; timings were collected through the local API.
 - Review dbt materializations for Gold fact, dimensions, and aggregate marts.
+  Initial review completed: Silver is materialized as tables, Gold defaults to
+  views, and aggregate marts are currently semantic fast paths rather than
+  physically persisted tables.
 - Keep aggregate marts as the fast path for common dashboard and agent
   questions.
 - Add persisted tables, indexes, or DuckDB-friendly materializations only when
-  benchmarks show a clear benefit.
+  benchmarks show a clear benefit. No materialization change was made without
+  timing evidence.
 - Document tradeoffs between freshness, local storage size, build time, and
   query latency.
+
+Benchmark results:
+
+- `P01` daily KPI trend over `gold_daily_kpis`: median `962 ms`.
+- `P02` zone demand ranking over `gold_zone_demand`: median `1265 ms`.
+- `P03` vendor aggregation over `fact_trips` plus `dim_vendor`: median
+  `3701 ms`.
+- `P04` payment-type aggregation over `fact_trips` plus `dim_payment_type`:
+  median `4062 ms`.
+- `P05` pickup/dropoff zone joins over `fact_trips` plus two `dim_zone` roles:
+  median `1078 ms`.
+
+Materialization decision:
+
+- Keep current dbt materialization unchanged for the MVP: Silver as tables,
+  Gold as views.
+- Do not persist `fact_trips` because it would duplicate the largest table
+  without a clear demo need.
+- Revisit persisted aggregate marts only if future demo requirements need lower
+  latency than the measured API timings.
+
+Verification:
+
+- `docker compose up -d` started the existing stack without rebuild.
+- `docker compose ps` showed Postgres, MinIO, API, demo, Airflow scheduler, and
+  Airflow webserver running.
+- API `/healthz` returned `status=ok`, `duckdb_exists=true`, and
+  `duckdb_connectable=true`.
+- Streamlit returned HTTP `200`.
+- Airflow `/health` returned HTTP `200`.
+- `python scripts/benchmark_phase17.py --repeats 5 --warmup 1` completed and
+  wrote `docs/performance-benchmark-results.json`.
+- API smoke check returned rows for a valid `gold_daily_kpis` query.
+- DDL smoke check returned HTTP `400` for `drop table gold_daily_kpis`.
+- Syntax parse for `scripts/benchmark_phase17.py` passed.
+- `python -m pytest -p no:cacheprovider tests/test_semantic_catalog.py
+  tests/test_sql_guardrails.py` returned `5 passed, 1 skipped`; the SQL
+  guardrail module remained dependency-gated in the host environment.
+- Full host `python -m pytest -p no:cacheprovider` returned `20 passed, 2
+  skipped`; API and SQL guardrail tests remained dependency-gated in the host
+  environment.
 
 Verification target:
 
@@ -732,11 +780,9 @@ Verification target:
 - If no performance change is needed, document that decision with measured
   evidence.
 
-Next step: Phase 18, CI/CD And Release Packaging.
-
 ## Phase 18: CI/CD And Release Packaging
 
-Status: planned.
+Status: completed on 2026-04-27.
 
 Goal: make the project easier to verify repeatedly and package for thesis
 submission or handoff.
@@ -745,15 +791,36 @@ Required completion:
 
 - Add CI checks where the repository environment supports them: Python tests,
   semantic catalog tests, SQL guardrail tests, and lightweight docs consistency
-  checks.
+  checks. Added `.github/workflows/ci.yml` to install `.[dev]`, run
+  `python -m pytest -p no:cacheprovider`, and run
+  `python scripts/release_check.py`.
 - Keep Docker-based verification documented for API checks that depend on the
-  container runtime dependency set.
+  container runtime dependency set. Added release checklist sections for local
+  Docker service health and API guardrail smoke checks.
 - Standardize `.env.example`, startup instructions, reset instructions, and
-  known local ports.
+  known local ports. Documented required environment expectations, local ports,
+  startup checks, and reset notes in `docs/release-checklist.md`.
 - Create `docs/release-checklist.md` for pre-defense and final-submission
-  checks.
+  checks. Completed.
 - Document which checks are mandatory for code changes, dbt changes, API
-  changes, docs-only changes, and final release.
+  changes, docs-only changes, and final release. Completed in the release
+  checklist.
+
+Verification:
+
+- `python scripts/release_check.py` passed.
+- Syntax parse passed for `scripts/release_check.py` and
+  `scripts/benchmark_phase17.py`.
+- `python -m pytest -p no:cacheprovider` returned `20 passed, 2 skipped`; API
+  and SQL guardrail tests remained dependency-gated on the host.
+- `docker compose ps` showed Postgres, MinIO, API, demo, Airflow scheduler, and
+  Airflow webserver running.
+- API `/healthz` returned `status=ok`, `duckdb_exists=true`, and
+  `duckdb_connectable=true`.
+- Streamlit returned HTTP `200`.
+- Airflow `/health` returned HTTP `200`.
+- API release smoke checks returned HTTP `200` for a valid Gold query, HTTP
+  `400` for DDL, and HTTP `400` for `select * from fact_trips`.
 
 Verification target:
 

@@ -1,0 +1,93 @@
+{
+  "benchmark": "phase17_api_query_performance",
+  "generated_at": "2026-04-27T15:19:02.044292+00:00",
+  "api_url": "http://localhost:8000/api/v1/query",
+  "warmup": 1,
+  "results": [
+    {
+      "case_id": "P01",
+      "name": "Daily KPI trend",
+      "query_surface": "aggregate mart: gold_daily_kpis",
+      "repeats": 5,
+      "row_count": 364,
+      "min_ms": 914,
+      "median_ms": 962,
+      "max_ms": 2999,
+      "samples_ms": [
+        936,
+        914,
+        962,
+        2999,
+        1391
+      ]
+    },
+    {
+      "case_id": "P02",
+      "name": "Zone demand ranking",
+      "query_surface": "aggregate mart: gold_zone_demand",
+      "repeats": 5,
+      "row_count": 25,
+      "min_ms": 1171,
+      "median_ms": 1265,
+      "max_ms": 1415,
+      "samples_ms": [
+        1234,
+        1265,
+        1414,
+        1415,
+        1171
+      ]
+    },
+    {
+      "case_id": "P03",
+      "name": "Vendor aggregation",
+      "query_surface": "star schema: fact_trips + dim_vendor",
+      "repeats": 5,
+      "row_count": 3,
+      "min_ms": 3348,
+      "median_ms": 3701,
+      "max_ms": 4820,
+      "samples_ms": [
+        3701,
+        4820,
+        3348,
+        3513,
+        3897
+      ]
+    },
+    {
+      "case_id": "P04",
+      "name": "Payment type aggregation",
+      "query_surface": "star schema: fact_trips + dim_payment_type",
+      "repeats": 5,
+      "row_count": 6,
+      "min_ms": 3347,
+      "median_ms": 4062,
+      "max_ms": 4416,
+      "samples_ms": [
+        4062,
+        3347,
+        4092,
+        4416,
+        3370
+      ]
+    },
+    {
+      "case_id": "P05",
+      "name": "Pickup/dropoff zone joins",
+      "query_surface": "star schema: fact_trips + two dim_zone roles",
+      "repeats": 5,
+      "row_count": 50,
+      "min_ms": 1062,
+      "median_ms": 1078,
+      "max_ms": 1256,
+      "samples_ms": [
+        1067,
+        1256,
+        1078,
+        1089,
+        1062
+      ]
+    }
+  ]
+}
