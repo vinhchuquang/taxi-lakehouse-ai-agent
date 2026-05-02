@@ -97,6 +97,7 @@ docker compose exec airflow-scheduler python -c "import sys; sys.path.insert(0, 
 | Ingestion changes | `python -m pytest -p no:cacheprovider tests/test_tlc_ingestion.py`; review MinIO object paths |
 | dbt model or schema changes | dbt build through `airflow-scheduler`; review warning-only anomaly tests |
 | Semantic catalog changes | `python -m pytest -p no:cacheprovider tests/test_semantic_catalog.py`; API schema smoke check |
+| Gold model exposure changes | `python scripts/release_check.py`; confirm every `dbt/models/gold/*.sql` model has one matching `contracts/semantic_catalog.yaml` table and vice versa |
 | SQL guardrail changes | SQL guardrail tests; Docker API blocked-query smoke checks |
 | API agent changes | API smoke checks for answer, clarification, and blocked SQL |
 | Demo changes | Streamlit HTTP `200`; official demo scenario spot checks |

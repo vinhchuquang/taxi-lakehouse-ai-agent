@@ -55,6 +55,7 @@ def main() -> int:
         check_env_example,
         check_runbook_ports,
         check_release_checklist,
+        check_gold_catalog_consistency,
         check_no_tracked_env,
         check_no_obvious_doc_secrets,
     ]
@@ -121,6 +122,40 @@ def check_release_checklist() -> list[str]:
         for term in required_terms
         if term not in text
     ]
+
+
+def check_gold_catalog_consistency() -> list[str]:
+    gold_dir = ROOT / "dbt" / "models" / "gold"
+    catalog_path = ROOT / "contracts" / "semantic_catalog.yaml"
+    if not gold_dir.is_dir():
+        return ["Missing dbt Gold model directory: dbt/models/gold"]
+    if not catalog_path.is_file():
+        return ["Missing semantic catalog: contracts/semantic_catalog.yaml"]
+
+    gold_models = {
+        path.stem
+        for path in gold_dir.glob("*.sql")
+        if not path.name.startswith("_")
+    }
+    catalog_text = catalog_path.read_text(encoding="utf-8")
+    catalog_tables = set(
+        re.findall(r"^  - name:\s+([A-Za-z0-9_]+)\s*$", catalog_text, flags=re.MULTILINE)
+    )
+
+    failures: list[str] = []
+    missing_from_catalog = sorted(gold_models - catalog_tables)
+    extra_catalog_tables = sorted(catalog_tables - gold_models)
+    if missing_from_catalog:
+        failures.append(
+            "Gold dbt models missing from semantic catalog: "
+            + ", ".join(missing_from_catalog)
+        )
+    if extra_catalog_tables:
+        failures.append(
+            "Semantic catalog tables without matching dbt Gold model: "
+            + ", ".join(extra_catalog_tables)
+        )
+    return failures
 
 
 def check_no_tracked_env() -> list[str]:

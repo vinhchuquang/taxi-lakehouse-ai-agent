@@ -608,6 +608,51 @@ Next action:
 - Phase 23: add or document a low-risk consistency check between dbt Gold model
   names and semantic catalog entries, then refresh skip documentation if needed.
 
+## Last Verified Phase 23 Low-Risk Quality Gate State
+
+Last Phase 23 verification: `2026-05-02`.
+
+Phase 23 outputs:
+
+- `scripts/release_check.py` now compares `dbt/models/gold/*.sql` model names
+  with top-level `contracts/semantic_catalog.yaml` table entries.
+- `docs/release-checklist.md` now lists the Gold model exposure consistency
+  check for Gold model or semantic catalog changes.
+
+Implemented behavior:
+
+- Release checks fail if a dbt Gold SQL model is missing from the semantic
+  catalog.
+- Release checks fail if the semantic catalog exposes a table without a matching
+  dbt Gold SQL model.
+- The check uses repository files only and does not add new runtime
+  dependencies.
+- API guardrail behavior, semantic catalog contents, dbt models, and Gold
+  materialization choices were left unchanged.
+
+Verification:
+
+- `python scripts/release_check.py` passed, including the new Gold/catalog
+  consistency check.
+- `python -m pytest -p no:cacheprovider` returned `21 passed, 2 skipped`.
+- The skipped tests remain the known host dependency-gated SQL guardrail and API
+  smoke tests. Docker/API-container checks remain the intended verification path
+  because the runtime image contains `sqlglot`, `duckdb`, and related API
+  dependencies.
+- `docker compose ps` showed Postgres, MinIO, API, demo, Airflow scheduler, and
+  Airflow webserver running.
+- `GET http://localhost:8000/healthz` returned `status=ok`,
+  `duckdb_exists=true`, and `duckdb_connectable=true`.
+- API smoke checks returned:
+  - HTTP `200` for a valid `gold_daily_kpis` query filtered to `2024-H1`
+  - HTTP `400` for `drop table gold_daily_kpis`
+  - HTTP `400` for `select * from fact_trips`
+
+Next action:
+
+- Phase 24: choose exactly one post-thesis extension direction before changing
+  scope.
+
 ## Last Verified Ask AI History Display
 
 Last verification: `2026-04-28`.

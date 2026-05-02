@@ -1019,28 +1019,38 @@ Next step: Phase 23, Low-Risk Quality Gate Cleanup.
 
 ## Phase 23: Low-Risk Quality Gate Cleanup
 
-Status: planned.
+Status: completed on 2026-05-02.
 
 Goal: reduce small defense and handoff risks without expanding the product
 scope.
 
-Required completion:
+Completed:
 
-- Add or document a consistency check between dbt Gold model names and
-  `contracts/semantic_catalog.yaml` entries.
-- Review host-local skipped tests. Either document Docker-first verification as
+- Added a release consistency check between `dbt/models/gold/*.sql` model names
+  and top-level `contracts/semantic_catalog.yaml` table entries.
+- Documented the Gold model exposure check in `docs/release-checklist.md`.
+- Reviewed host-local skipped tests. Docker-first verification remains
   the intended path, or add missing dev dependency notes if the host check can
   be made non-skipping without installing runtime dependencies ad hoc.
-- Keep guardrail behavior unchanged unless a concrete bug is found.
-- Keep Gold materialization unchanged unless a new benchmark shows a clear
+- Kept guardrail behavior unchanged; only release validation was tightened.
+- Kept Gold materialization unchanged because no new benchmark showed a clear
   latency need.
 
-Verification target:
+Verification:
 
-- Release check still passes.
-- Host tests still pass with only known skips, or the skip explanation is
-  updated.
-- Docker API smoke checks still prove valid Gold access and blocked unsafe SQL.
+- `python scripts/release_check.py` passed, including the new dbt Gold model to
+  semantic catalog consistency check.
+- `python -m pytest -p no:cacheprovider` returned `21 passed, 2 skipped`.
+- The skipped tests remain the known host dependency-gated SQL guardrail and API
+  smoke tests; Docker/API-container checks remain the intended verification path
+  for those runtime dependencies.
+- `docker compose ps` showed Postgres, MinIO, API, demo, Airflow scheduler, and
+  Airflow webserver running.
+- API `/healthz` returned `status=ok`, `duckdb_exists=true`, and
+  `duckdb_connectable=true`.
+- Docker API smoke checks returned HTTP `200` for a valid `gold_daily_kpis`
+  query, HTTP `400` for `drop table gold_daily_kpis`, and HTTP `400` for
+  `select * from fact_trips`.
 
 Next step: Phase 24, Post-Thesis Extension Decision Gate.
 
