@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from numbers import Number
 import os
 import re
 import unicodedata
@@ -18,6 +19,13 @@ from app.text_to_sql import (
 
 
 MAX_REPAIR_ATTEMPTS = 1
+SAFETY_CONTRACT = [
+    "Gold-only tables",
+    "SELECT-only SQL",
+    "cataloged columns",
+    "allowed joins",
+    "bounded result set",
+]
 
 
 @dataclass
@@ -91,11 +99,14 @@ def run_query_agent(
 
     plan = build_query_plan(normalized_question, catalog)
     context.plan = plan
+    plan_confidence = plan_confidence_for(plan)
     context.add_step(
         "intent_analysis",
         "ok",
         f"Detected intent: {plan.intent}.",
         intent=plan.intent,
+        confidence=plan_confidence,
+        normalized_question=normalized_question,
     )
     context.add_step(
         "planning",
@@ -104,6 +115,8 @@ def run_query_agent(
         surface=plan.surface,
         selected_tables=plan.selected_tables,
         expected_groupings=plan.expected_groupings,
+        route_confidence=plan_confidence,
+        planner_policy=planner_policy_for(plan),
     )
 
     candidate_sql = generate_candidate_sql(context)
@@ -135,7 +148,7 @@ def run_query_agent(
     )
 
     return QueryResponse(
-        summary=f"Returned {len(rows)} rows from curated Gold data.",
+        summary=response_summary(context, rows, columns),
         sql=validated.sql,
         columns=columns,
         rows=rows,
@@ -155,6 +168,7 @@ def generate_candidate_sql(context: AgentContext) -> str:
             "sql_generation",
             "provided_sql",
             "Using SQL override supplied by the request.",
+            source="request_override",
         )
         return context.request.sql
 
@@ -165,6 +179,7 @@ def generate_candidate_sql(context: AgentContext) -> str:
             "ok",
             "Generated SQL from deterministic agent planner.",
             source="deterministic_planner",
+            intent=context.plan.intent if context.plan else None,
         )
         return deterministic_sql
 
@@ -194,6 +209,7 @@ def validate_candidate_sql(context: AgentContext, candidate_sql: str):
             "ok",
             "SQL passed read-only Gold guardrails.",
             tables=sorted(validated.tables),
+            safety_contract=SAFETY_CONTRACT,
         )
         return validated
     except SQLValidationError as exc:
@@ -212,6 +228,7 @@ def validate_candidate_sql(context: AgentContext, candidate_sql: str):
             "ok",
             "Repaired SQL passed read-only Gold guardrails.",
             tables=sorted(validated.tables),
+            safety_contract=SAFETY_CONTRACT,
         )
         return validated
 
@@ -227,6 +244,7 @@ def execute_candidate_sql(context: AgentContext, sql: str) -> tuple[list[str], l
             f"Executed read-only query and returned {len(rows)} rows.",
             row_count=len(rows),
             execution_ms=execution_ms,
+            read_only=True,
         )
         return columns, rows, execution_ms
     except Exception as exc:
@@ -251,7 +269,7 @@ def self_check_results(
 
     for column in columns:
         values = [row.get(column) for row in rows if row.get(column) is not None]
-        numeric_values = [value for value in values if isinstance(value, int | float)]
+        numeric_values = [value for value in values if is_number(value)]
         if numeric_values and any(value < 0 for value in numeric_values):
             context.warnings.append(f"`{column}` contains negative values.")
 
@@ -266,6 +284,13 @@ def self_check_results(
         status,
         message,
         warnings=context.warnings,
+        checks=[
+            "non_empty_result" if rows else "empty_result",
+            "max_row_limit_reviewed",
+            "negative_numeric_scan",
+            "expected_groupings_present",
+        ],
+        warning_count=len(context.warnings),
     )
 
 
@@ -283,6 +308,9 @@ def synthesize_answer(
             "ok",
             "Built deterministic answer from executed rows.",
             source="deterministic",
+            grounding="executed_rows_only",
+            row_count=len(rows),
+            confidence=confidence_for(rows, context.warnings),
         )
         return deterministic
 
@@ -319,6 +347,9 @@ def synthesize_answer(
                 "ok",
                 "Synthesized natural-language answer from executed rows.",
                 source="openai",
+                grounding="executed_rows_only",
+                row_count=len(rows),
+                confidence=confidence_for(rows, context.warnings),
             )
             return answer
     except Exception as exc:
@@ -329,46 +360,93 @@ def synthesize_answer(
         "ok",
         "Built deterministic answer after answer synthesis fallback.",
         source="deterministic",
+        grounding="executed_rows_only",
+        row_count=len(rows),
+        confidence=confidence_for(rows, context.warnings),
     )
     return deterministic
 
 
 def deterministic_answer(context: AgentContext, columns: list[str], rows: list[dict[str, Any]]) -> str:
     if not rows:
-        return "No rows matched the question over the curated Gold data."
+        return (
+            "Result: no rows matched the question over the curated Gold data. "
+            "Grounding: no answer was inferred beyond the executed SQL result."
+        )
 
     row_count = len(rows)
     plan = context.plan
     table_text = ", ".join(plan.selected_tables) if plan and plan.selected_tables else "curated Gold data"
+    surface_text = plan.surface.replace("_", " ") if plan else "curated Gold"
     metric_columns = [
         column
         for column in columns
         if any(token in column.lower() for token in ("count", "amount", "fare", "distance", "avg", "total"))
     ]
-    metric_text = ""
+    key_finding = "Key finding: no numeric metric column was available for ranking in the returned rows."
     if metric_columns:
         metric = metric_columns[0]
         numeric_rows = [
             row
             for row in rows
-            if isinstance(row.get(metric), int | float)
+            if is_number(row.get(metric))
         ]
         if numeric_rows:
             top_row = max(numeric_rows, key=lambda item: item[metric])
             dimension_values = [
-                f"{column}={top_row[column]}"
+                f"{column}={format_value(top_row[column])}"
                 for column in columns
                 if column != metric and column in top_row
             ][:3]
-            metric_text = (
-                f" Highest `{metric}` in the returned rows is {top_row[metric]} "
-                f"({', '.join(dimension_values)})."
+            context_text = f" for {', '.join(dimension_values)}" if dimension_values else ""
+            key_finding = (
+                f"Key finding: highest `{metric}` in the returned rows is "
+                f"{format_value(top_row[metric])}{context_text}."
             )
-    warning_text = f" Warnings: {'; '.join(context.warnings)}" if context.warnings else ""
+    warning_text = f" Warnings: {'; '.join(context.warnings)}" if context.warnings else " Warnings: none."
     return (
-        f"The agent queried {table_text} and returned {row_count} rows with "
-        f"columns: {', '.join(columns)}.{metric_text}{warning_text}"
+        f"Route: {surface_text} over {table_text}. "
+        f"Result: returned {row_count} rows and {len(columns)} columns "
+        f"({', '.join(columns)}). "
+        f"{key_finding} "
+        "Grounding: this answer uses only rows returned by the validated read-only SQL."
+        f"{warning_text}"
     )
+
+
+def response_summary(context: AgentContext, rows: list[dict[str, Any]], columns: list[str]) -> str:
+    plan = context.plan
+    if plan is None:
+        return f"Returned {len(rows)} rows from curated Gold data."
+    table_text = ", ".join(plan.selected_tables) if plan.selected_tables else "curated Gold data"
+    return (
+        f"{plan.intent} via {plan.surface}: returned {len(rows)} rows "
+        f"and {len(columns)} columns from {table_text}."
+    )
+
+
+def plan_confidence_for(plan: QueryPlan) -> str:
+    if plan.surface in {"aggregate_mart", "star_schema"}:
+        return "high"
+    return "medium"
+
+
+def planner_policy_for(plan: QueryPlan) -> str:
+    if plan.surface == "aggregate_mart":
+        return "Use curated aggregate marts for common KPI and demand questions."
+    if plan.surface == "star_schema":
+        return "Use fact/dimension tables only through cataloged columns and allowed joins."
+    return "Use execution-enabled Gold metadata, then validate SQL before execution."
+
+
+def is_number(value: Any) -> bool:
+    return isinstance(value, Number) and not isinstance(value, bool)
+
+
+def format_value(value: Any) -> str:
+    if is_number(value):
+        return f"{value:,.2f}" if isinstance(value, float) else f"{value:,}"
+    return str(value)
 
 
 def repair_sql_once(context: AgentContext, bad_sql: str, error: str) -> str:

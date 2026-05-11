@@ -106,6 +106,8 @@ def test_agent_eval_detects_expected_planning_payload() -> None:
         expected_surface="aggregate_mart",
         expected_tables={"gold_daily_kpis"},
         sql_contains=("gold_daily_kpis", "avg_trip_distance"),
+        answer_contains=(),
+        required_steps=("planning",),
     )
     payload = {
         "requires_clarification": False,

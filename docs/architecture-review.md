@@ -37,6 +37,10 @@ graduation project without adding unnecessary agent frameworks.
   `sqlglot`, which makes the agent query surface safer and easier to defend.
 - The read-only agent workflow is explicit and framework-light: intent,
   planning, SQL generation, validation, execution, self-check, and answer.
+- The agent response is auditable for demo and reporting: answers include route,
+  result shape, key finding, grounding, and warnings, while `agent_steps`
+  expose planner policy, selected tables, safety contract, execution, and
+  self-check metadata.
 - The scope is controlled: Yellow Taxi, Green Taxi, and Taxi Zone Lookup only.
 
 ## Known Limitations

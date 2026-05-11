@@ -2,12 +2,48 @@
   "evaluation": "agent_regression",
   "base_url": "http://localhost:8000",
   "window": "2024-H1",
-  "total": 11,
-  "passed": 11,
+  "total": 27,
+  "passed": 27,
   "failed": 0,
+  "metrics": {
+    "total_by_category": {
+      "answer": 13,
+      "clarification": 3,
+      "blocked": 11
+    },
+    "pass_rate_by_category": {
+      "answer": 1.0,
+      "clarification": 1.0,
+      "blocked": 1.0
+    },
+    "successful_answer_pass_rate": 1.0,
+    "unsafe_rejection_rate": 1.0,
+    "clarification_pass_rate": 1.0,
+    "trace_complete_rate": 1.0,
+    "grounded_answer_rate": 1.0,
+    "latency_ms": {
+      "overall_p50": 96,
+      "overall_p95": 2576,
+      "answer_p50": 666,
+      "answer_p95": 2598,
+      "by_surface": {
+        "aggregate_mart": {
+          "count": 6,
+          "p50": 528,
+          "p95": 805
+        },
+        "star_schema": {
+          "count": 7,
+          "p50": 784,
+          "p95": 2598
+        }
+      }
+    }
+  },
   "results": [
     {
       "case_id": "A01",
+      "category": "answer",
       "status": "pass",
       "http_status": 200,
       "failures": [],
@@ -18,10 +54,13 @@
       "row_count": 12,
       "requires_clarification": false,
       "detail": null,
-      "elapsed_ms": 548
+      "elapsed_ms": 342,
+      "trace_complete": true,
+      "grounded_answer": true
     },
     {
       "case_id": "A02",
+      "category": "answer",
       "status": "pass",
       "http_status": 200,
       "failures": [],
@@ -32,10 +71,13 @@
       "row_count": 12,
       "requires_clarification": false,
       "detail": null,
-      "elapsed_ms": 534
+      "elapsed_ms": 450,
+      "trace_complete": true,
+      "grounded_answer": true
     },
     {
       "case_id": "A03",
+      "category": "answer",
       "status": "pass",
       "http_status": 200,
       "failures": [],
@@ -46,10 +88,13 @@
       "row_count": 12,
       "requires_clarification": false,
       "detail": null,
-      "elapsed_ms": 427
+      "elapsed_ms": 390,
+      "trace_complete": true,
+      "grounded_answer": true
     },
     {
       "case_id": "A04",
+      "category": "answer",
       "status": "pass",
       "http_status": 200,
       "failures": [],
@@ -60,10 +105,13 @@
       "row_count": 12,
       "requires_clarification": false,
       "detail": null,
-      "elapsed_ms": 615
+      "elapsed_ms": 519,
+      "trace_complete": true,
+      "grounded_answer": true
     },
     {
       "case_id": "A05",
+      "category": "answer",
       "status": "pass",
       "http_status": 200,
       "failures": [],
@@ -75,10 +123,13 @@
       "row_count": 17,
       "requires_clarification": false,
       "detail": null,
-      "elapsed_ms": 810
+      "elapsed_ms": 666,
+      "trace_complete": true,
+      "grounded_answer": true
     },
     {
       "case_id": "A06",
+      "category": "answer",
       "status": "pass",
       "http_status": 200,
       "failures": [],
@@ -90,10 +141,13 @@
       "row_count": 6,
       "requires_clarification": false,
       "detail": null,
-      "elapsed_ms": 3316
+      "elapsed_ms": 2598,
+      "trace_complete": true,
+      "grounded_answer": true
     },
     {
       "case_id": "A07",
+      "category": "answer",
       "status": "pass",
       "http_status": 200,
       "failures": [],
@@ -104,10 +158,13 @@
       "row_count": 8,
       "requires_clarification": false,
       "detail": null,
-      "elapsed_ms": 862
+      "elapsed_ms": 770,
+      "trace_complete": true,
+      "grounded_answer": true
     },
     {
       "case_id": "A08",
+      "category": "answer",
       "status": "pass",
       "http_status": 200,
       "failures": [],
@@ -119,10 +176,101 @@
       "row_count": 50,
       "requires_clarification": false,
       "detail": null,
-      "elapsed_ms": 862
+      "elapsed_ms": 784,
+      "trace_complete": true,
+      "grounded_answer": true
+    },
+    {
+      "case_id": "A09",
+      "category": "answer",
+      "status": "pass",
+      "http_status": 200,
+      "failures": [],
+      "surface": "aggregate_mart",
+      "selected_tables": [
+        "gold_zone_demand"
+      ],
+      "row_count": 50,
+      "requires_clarification": false,
+      "detail": null,
+      "elapsed_ms": 805,
+      "trace_complete": true,
+      "grounded_answer": true
+    },
+    {
+      "case_id": "A10",
+      "category": "answer",
+      "status": "pass",
+      "http_status": 200,
+      "failures": [],
+      "surface": "star_schema",
+      "selected_tables": [
+        "fact_trips",
+        "dim_zone"
+      ],
+      "row_count": 8,
+      "requires_clarification": false,
+      "detail": null,
+      "elapsed_ms": 593,
+      "trace_complete": true,
+      "grounded_answer": true
+    },
+    {
+      "case_id": "A11",
+      "category": "answer",
+      "status": "pass",
+      "http_status": 200,
+      "failures": [],
+      "surface": "star_schema",
+      "selected_tables": [
+        "fact_trips",
+        "dim_date"
+      ],
+      "row_count": 6,
+      "requires_clarification": false,
+      "detail": null,
+      "elapsed_ms": 1053,
+      "trace_complete": true,
+      "grounded_answer": true
+    },
+    {
+      "case_id": "A12",
+      "category": "answer",
+      "status": "pass",
+      "http_status": 200,
+      "failures": [],
+      "surface": "star_schema",
+      "selected_tables": [
+        "fact_trips",
+        "dim_vendor"
+      ],
+      "row_count": 3,
+      "requires_clarification": false,
+      "detail": null,
+      "elapsed_ms": 2576,
+      "trace_complete": true,
+      "grounded_answer": true
+    },
+    {
+      "case_id": "A13",
+      "category": "answer",
+      "status": "pass",
+      "http_status": 200,
+      "failures": [],
+      "surface": "aggregate_mart",
+      "selected_tables": [
+        "gold_zone_demand"
+      ],
+      "row_count": 8,
+      "requires_clarification": false,
+      "detail": null,
+      "elapsed_ms": 607,
+      "trace_complete": true,
+      "grounded_answer": true
     },
     {
       "case_id": "C01",
+      "category": "clarification",
       "status": "pass",
       "http_status": 200,
       "failures": [],
@@ -131,10 +279,43 @@
       "row_count": 0,
       "requires_clarification": true,
       "detail": null,
-      "elapsed_ms": 72
+      "elapsed_ms": 43,
+      "trace_complete": true,
+      "grounded_answer": false
+    },
+    {
+      "case_id": "C02",
+      "category": "clarification",
+      "status": "pass",
+      "http_status": 200,
+      "failures": [],
+      "surface": null,
+      "selected_tables": null,
+      "row_count": 0,
+      "requires_clarification": true,
+      "detail": null,
+      "elapsed_ms": 71,
+      "trace_complete": true,
+      "grounded_answer": false
+    },
+    {
+      "case_id": "C03",
+      "category": "clarification",
+      "status": "pass",
+      "http_status": 200,
+      "failures": [],
+      "surface": null,
+      "selected_tables": null,
+      "row_count": 0,
+      "requires_clarification": true,
+      "detail": null,
+      "elapsed_ms": 85,
+      "trace_complete": true,
+      "grounded_answer": false
     },
     {
       "case_id": "B01",
+      "category": "blocked",
       "status": "pass",
       "http_status": 400,
       "failures": [],
@@ -143,10 +324,13 @@
       "row_count": 0,
       "requires_clarification": null,
       "detail": "Only SELECT queries are allowed.",
-      "elapsed_ms": 66
+      "elapsed_ms": 90,
+      "trace_complete": false,
+      "grounded_answer": false
     },
     {
       "case_id": "B02",
+      "category": "blocked",
       "status": "pass",
       "http_status": 400,
       "failures": [],
@@ -155,7 +339,144 @@
       "row_count": 0,
       "requires_clarification": null,
       "detail": "Wildcard SELECT is not allowed for detailed Gold tables: fact_trips.",
-      "elapsed_ms": 86
+      "elapsed_ms": 81,
+      "trace_complete": false,
+      "grounded_answer": false
+    },
+    {
+      "case_id": "B03",
+      "category": "blocked",
+      "status": "pass",
+      "http_status": 400,
+      "failures": [],
+      "surface": null,
+      "selected_tables": null,
+      "row_count": 0,
+      "requires_clarification": null,
+      "detail": "Query references non-Gold or unknown tables: bronze_yellow_trips.",
+      "elapsed_ms": 90,
+      "trace_complete": false,
+      "grounded_answer": false
+    },
+    {
+      "case_id": "B04",
+      "category": "blocked",
+      "status": "pass",
+      "http_status": 400,
+      "failures": [],
+      "surface": null,
+      "selected_tables": null,
+      "row_count": 0,
+      "requires_clarification": null,
+      "detail": "Query references non-Gold or unknown tables: silver_trips_unified.",
+      "elapsed_ms": 76,
+      "trace_complete": false,
+      "grounded_answer": false
+    },
+    {
+      "case_id": "B05",
+      "category": "blocked",
+      "status": "pass",
+      "http_status": 400,
+      "failures": [],
+      "surface": null,
+      "selected_tables": null,
+      "row_count": 0,
+      "requires_clarification": null,
+      "detail": "Query references non-Gold or unknown tables: gold_unknown.",
+      "elapsed_ms": 86,
+      "trace_complete": false,
+      "grounded_answer": false
+    },
+    {
+      "case_id": "B06",
+      "category": "blocked",
+      "status": "pass",
+      "http_status": 400,
+      "failures": [],
+      "surface": null,
+      "selected_tables": null,
+      "row_count": 0,
+      "requires_clarification": null,
+      "detail": "Query references unknown column: fake_metric.",
+      "elapsed_ms": 77,
+      "trace_complete": false,
+      "grounded_answer": false
+    },
+    {
+      "case_id": "B07",
+      "category": "blocked",
+      "status": "pass",
+      "http_status": 400,
+      "failures": [],
+      "surface": null,
+      "selected_tables": null,
+      "row_count": 0,
+      "requires_clarification": null,
+      "detail": "JOIN condition does not match an allowed semantic catalog join path.",
+      "elapsed_ms": 88,
+      "trace_complete": false,
+      "grounded_answer": false
+    },
+    {
+      "case_id": "B08",
+      "category": "blocked",
+      "status": "pass",
+      "http_status": 400,
+      "failures": [],
+      "surface": null,
+      "selected_tables": null,
+      "row_count": 0,
+      "requires_clarification": null,
+      "detail": "JOIN must include an ON condition.",
+      "elapsed_ms": 70,
+      "trace_complete": false,
+      "grounded_answer": false
+    },
+    {
+      "case_id": "B09",
+      "category": "blocked",
+      "status": "pass",
+      "http_status": 400,
+      "failures": [],
+      "surface": null,
+      "selected_tables": null,
+      "row_count": 0,
+      "requires_clarification": null,
+      "detail": "Cartesian or CROSS JOIN is not allowed.",
+      "elapsed_ms": 76,
+      "trace_complete": false,
+      "grounded_answer": false
+    },
+    {
+      "case_id": "B10",
+      "category": "blocked",
+      "status": "pass",
+      "http_status": 400,
+      "failures": [],
+      "surface": null,
+      "selected_tables": null,
+      "row_count": 0,
+      "requires_clarification": null,
+      "detail": "Only SELECT queries are allowed.",
+      "elapsed_ms": 96,
+      "trace_complete": false,
+      "grounded_answer": false
+    },
+    {
+      "case_id": "B11",
+      "category": "blocked",
+      "status": "pass",
+      "http_status": 400,
+      "failures": [],
+      "surface": null,
+      "selected_tables": null,
+      "row_count": 0,
+      "requires_clarification": null,
+      "detail": "Query must reference at least one curated Gold table.",
+      "elapsed_ms": 76,
+      "trace_complete": false,
+      "grounded_answer": false
     }
   ]
 }

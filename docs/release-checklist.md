@@ -119,9 +119,10 @@ Phase 24 selected extension direction:
 Current active next phase:
 
 - Phase 35 runtime verification recheck is complete as of `2026-05-11`.
-- Phase 36 GitHub handoff and defense freeze is the next planned step.
-- After Phase 36, hold the defense-ready baseline unless a fresh verification
-  defect blocks the demo.
+- Phase 36 GitHub handoff is complete.
+- Phase 37 agent quality metrics and demo polish is complete.
+- Hold the defense-ready baseline unless a fresh verification defect blocks the
+  demo.
 - Public demo hardening, performance/materialization changes, and data-scope
   expansion remain deferred until after defense or a separate decision gate.
 
@@ -179,6 +180,18 @@ Phase 35 runtime recheck on `2026-05-11`:
   detailed wildcard access.
 - `python scripts/agent_eval.py --base-url http://localhost:8000 --window 2024-H1 --output docs/agent-evaluation-results.json`
   passed `11/11` cases.
+
+Phase 37 agent quality metrics on `2026-05-11`:
+
+- Deterministic answers include route, result shape, key finding, grounding, and
+  warnings.
+- Agent timeline metadata includes planner policy, safety contract, self-checks,
+  grounding, and confidence.
+- `python scripts/agent_eval.py --base-url http://localhost:8000 --window 2024-H1 --output docs/agent-evaluation-results.json`
+  passed `27/27` cases.
+- Report metrics: answer pass rate `1.0`, unsafe rejection rate `1.0`,
+  clarification pass rate `1.0`, trace completeness rate `1.0`, grounded answer
+  rate `1.0`, answer p50 latency `666 ms`, answer p95 latency `2598 ms`.
 
 ## Security Review
 

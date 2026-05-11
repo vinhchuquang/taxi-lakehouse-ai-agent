@@ -1530,12 +1530,12 @@ Next step: Phase 36, GitHub Handoff And Defense Freeze.
 
 ## Phase 36: GitHub Handoff And Defense Freeze
 
-Status: planned.
+Status: completed on 2026-05-11.
 
 Goal: publish the defense-ready baseline to GitHub and keep the project frozen
 for defense unless a verification defect blocks the demo.
 
-Planned work:
+Completed:
 
 - Commit and push the Phase 30-35 defense-polish and runtime verification
   evidence to `origin/main`.
@@ -1546,15 +1546,62 @@ Planned work:
 - Do not add feature scope, new data sources, materialization changes, public
   deployment hardening, or production auth in this phase.
 
-Completion criteria:
+Verification:
 
-- `git status --short` is clean after push.
-- `git log --oneline -1` identifies the handoff commit.
-- GitHub remote `origin/main` contains the handoff commit.
+- Commit `9691132` (`Record defense polish handoff`) was pushed to
+  `origin/main`.
+- `git status --short` was clean after push.
+- GitHub remote `origin/main` pointed at commit `9691132`.
 
-Next step: Phase 37, Defense Dry Run And Evidence Walkthrough.
+Next step: Phase 37, Agent Quality Metrics And Demo Polish.
 
-## Phase 37: Defense Dry Run And Evidence Walkthrough
+## Phase 37: Agent Quality Metrics And Demo Polish
+
+Status: completed on 2026-05-11.
+
+Goal: make the read-only AI query agent look and measure like a polished
+engineering component, not only a basic SQL wrapper.
+
+Completed:
+
+- Improved deterministic answers with route, result size, key finding,
+  grounding statement, and warning summary.
+- Enriched `agent_steps` metadata with route confidence, planner policy,
+  safety contract, read-only execution marker, self-check list, answer
+  grounding, and confidence.
+- Improved the Streamlit agent timeline so common metadata is shown as readable
+  captions before raw JSON details.
+- Expanded `scripts/agent_eval.py` from `11` to `27` cases covering successful
+  answers, clarification behavior, and unsafe query rejection.
+- Added report-ready agent metrics to `docs/agent-evaluation-results.json`:
+  answer pass rate, unsafe rejection rate, clarification pass rate, trace
+  completeness, grounded answer rate, and p50/p95 latency by surface.
+
+Verification:
+
+- `python -m pytest -p no:cacheprovider tests/test_api_smoke.py
+  tests/test_semantic_catalog.py tests/test_operational_scripts.py` passed with
+  `15 passed, 1 skipped`.
+- `python -m py_compile services/api/app/agent.py services/demo/app.py
+  scripts/agent_eval.py` passed.
+- `docker compose restart api demo` restarted the mounted API/demo services.
+- API `/healthz` returned `status=ok`, semantic catalog loaded, and DuckDB
+  connectable.
+- Streamlit returned HTTP `200`.
+- `python scripts/agent_eval.py --base-url http://localhost:8000 --window
+  2024-H1 --output docs/agent-evaluation-results.json` passed `27/27` cases.
+- Agent metrics from the run:
+  - successful answer pass rate: `1.0`
+  - unsafe rejection rate: `1.0`
+  - clarification pass rate: `1.0`
+  - trace completeness rate: `1.0`
+  - grounded answer rate: `1.0`
+  - answer p50 latency: `666 ms`
+  - answer p95 latency: `2598 ms`
+
+Next step: Phase 38, Defense Dry Run And Evidence Walkthrough.
+
+## Phase 38: Defense Dry Run And Evidence Walkthrough
 
 Status: planned.
 
@@ -1579,9 +1626,9 @@ Completion criteria:
   objects.
 - No new runtime behavior is introduced during rehearsal.
 
-Next step: Phase 38, Post-Defense Direction Decision Gate.
+Next step: Phase 39, Post-Defense Direction Decision Gate.
 
-## Phase 38: Post-Defense Direction Decision Gate
+## Phase 39: Post-Defense Direction Decision Gate
 
 Status: planned.
 
@@ -1608,19 +1655,19 @@ Completion criteria:
 - Roadmap records one selected direction and explicitly defers the others.
 - The selected direction includes verification commands and scope boundaries.
 
-Next step: Phase 39, Selected Post-Defense Implementation Track.
+Next step: Phase 40, Selected Post-Defense Implementation Track.
 
-## Phase 39: Selected Post-Defense Implementation Track
+## Phase 40: Selected Post-Defense Implementation Track
 
 Status: planned.
 
-Goal: implement the single direction chosen in Phase 38 without mixing unrelated
+Goal: implement the single direction chosen in Phase 39 without mixing unrelated
 product tracks.
 
 Default implementation rules:
 
 - Keep Yellow Taxi, Green Taxi, and Taxi Zone Lookup as the only data sources
-  unless Phase 38 explicitly chooses a data-scope expansion.
+  unless Phase 39 explicitly chooses a data-scope expansion.
 - Keep the AI agent read-only and Gold-only.
 - Keep aggregate marts as the fast path and fact/dim queries as controlled
   semantic-catalog paths.
@@ -1634,9 +1681,9 @@ Verification:
 - Pipeline changes: pipeline metadata checker plus Docker/Airflow verification.
 - dbt changes: dbt build through the Airflow scheduler container.
 
-Next step: Phase 40, Post-Implementation Release Gate.
+Next step: Phase 41, Post-Implementation Release Gate.
 
-## Phase 40: Post-Implementation Release Gate
+## Phase 41: Post-Implementation Release Gate
 
 Status: planned.
 
@@ -1646,10 +1693,10 @@ clear handoff state.
 Planned work:
 
 - Refresh release notes, runbook evidence, demo scenarios, and evaluation
-  results for the selected Phase 39 work.
+  results for the selected Phase 40 work.
 - Confirm no generated dbt artifacts or local secrets are tracked.
 - Confirm runtime smoke checks and release checks pass.
-- Decide whether to create a new tag only after the selected Phase 39 work is
+- Decide whether to create a new tag only after the selected Phase 40 work is
   verified.
 
 Completion criteria:

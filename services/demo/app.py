@@ -414,7 +414,58 @@ def render_agent_timeline(result: dict[str, Any]) -> None:
                 st.caption(message)
             metadata = step.get("metadata") or {}
             if metadata:
-                st.json(metadata, expanded=False)
+                render_agent_metadata(metadata)
+
+
+def render_agent_metadata(metadata: dict[str, Any]) -> None:
+    chips: list[str] = []
+    if metadata.get("surface"):
+        chips.append(f"Surface: `{metadata['surface']}`")
+    if metadata.get("route_confidence") or metadata.get("confidence"):
+        confidence = metadata.get("route_confidence") or metadata.get("confidence")
+        chips.append(f"Confidence: `{confidence}`")
+    if metadata.get("source"):
+        chips.append(f"Source: `{metadata['source']}`")
+    if metadata.get("grounding"):
+        chips.append(f"Grounding: `{metadata['grounding']}`")
+    if metadata.get("row_count") is not None:
+        chips.append(f"Rows: `{metadata['row_count']}`")
+    if metadata.get("execution_ms") is not None:
+        chips.append(f"Execution: `{metadata['execution_ms']} ms`")
+    if metadata.get("warning_count") is not None:
+        chips.append(f"Warnings: `{metadata['warning_count']}`")
+    if chips:
+        st.caption(" | ".join(chips))
+
+    if metadata.get("selected_tables"):
+        st.caption("Tables: " + ", ".join(f"`{table}`" for table in metadata["selected_tables"]))
+    if metadata.get("expected_groupings"):
+        st.caption("Expected grouping: " + ", ".join(f"`{item}`" for item in metadata["expected_groupings"]))
+    if metadata.get("safety_contract"):
+        st.caption("Safety: " + ", ".join(str(item) for item in metadata["safety_contract"]))
+    if metadata.get("checks"):
+        st.caption("Checks: " + ", ".join(str(item) for item in metadata["checks"]))
+    if metadata.get("planner_policy"):
+        st.caption(str(metadata["planner_policy"]))
+
+    hidden_keys = {
+        "surface",
+        "route_confidence",
+        "confidence",
+        "source",
+        "grounding",
+        "row_count",
+        "execution_ms",
+        "warning_count",
+        "selected_tables",
+        "expected_groupings",
+        "safety_contract",
+        "checks",
+        "planner_policy",
+    }
+    remaining = {key: value for key, value in metadata.items() if key not in hidden_keys}
+    if remaining:
+        st.json(remaining, expanded=False)
 
 
 def render_agent_checks(dataframe: pd.DataFrame, max_rows: int) -> None:

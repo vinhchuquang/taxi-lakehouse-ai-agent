@@ -70,8 +70,9 @@ continuity; this is not multi-turn agent memory and is not sent to the API.
 
 For successful scenarios, the UI should show:
 
-- final answer
-- agent timeline
+- final answer with route, result, key finding, and grounding
+- agent timeline with planner policy, selected tables, safety contract, checks,
+  and answer grounding
 - SQL expander
 - row/column/execution metrics
 - result table

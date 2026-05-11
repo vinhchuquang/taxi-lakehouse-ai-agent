@@ -887,7 +887,9 @@ Phase 28 agent evaluation harness:
   python scripts/agent_eval.py --base-url http://localhost:8000 --window 2024-H1 --output docs/agent-evaluation-results.json
   ```
 
-- Latest run passed `11/11` cases.
+- Initial Phase 28 run passed `11/11` cases; the latest Phase 37 harness now
+  passes `27/27` cases with answer, clarification, rejection, trace, grounding,
+  and latency metrics.
 - Cases cover bilingual H1 prompt handling, service KPI trends, vendor trend,
   payment split, pickup/dropoff geography, clarification, DDL rejection, and
   detailed wildcard rejection.
@@ -1016,9 +1018,50 @@ Status:
 
 - Phase 35 is complete.
 - The latest complete Docker/API runtime verification is now `2026-05-11`.
-- Next planned phase is Phase 36 GitHub handoff and defense freeze.
-- After Phase 36, hold the defense-ready baseline unless a fresh verification
-  defect blocks the demo.
+- Phase 36 GitHub handoff was completed with commit `9691132`.
+- Phase 37 agent quality metrics and demo polish is complete.
+- Hold the defense-ready baseline unless a fresh verification defect blocks the
+  demo.
+
+## Last Verified Phase 37 Agent Quality Metrics
+
+Last verification: `2026-05-11`.
+
+Implemented behavior:
+
+- Deterministic answers now include route, result shape, key finding, grounding,
+  and warning summary.
+- Agent timeline metadata now includes route confidence, planner policy, safety
+  contract, read-only execution marker, self-check list, grounding, and
+  confidence.
+- Streamlit renders common agent metadata as readable captions before raw JSON.
+- `scripts/agent_eval.py` now covers `27` cases and emits report-ready metrics.
+
+Verification:
+
+- `python -m pytest -p no:cacheprovider tests/test_api_smoke.py
+  tests/test_semantic_catalog.py tests/test_operational_scripts.py` passed with
+  `15 passed, 1 skipped`.
+- `python -m py_compile services/api/app/agent.py services/demo/app.py
+  scripts/agent_eval.py` passed.
+- `docker compose restart api demo` restarted the mounted API/demo services.
+- API `/healthz` returned `status=ok`, semantic catalog loaded, and DuckDB
+  connectable.
+- Streamlit returned HTTP `200`.
+- `python scripts/agent_eval.py --base-url http://localhost:8000 --window
+  2024-H1 --output docs/agent-evaluation-results.json` passed `27/27` cases.
+
+Latest agent metrics:
+
+- successful answer pass rate: `1.0`
+- unsafe rejection rate: `1.0`
+- clarification pass rate: `1.0`
+- trace completeness rate: `1.0`
+- grounded answer rate: `1.0`
+- answer p50 latency: `666 ms`
+- answer p95 latency: `2598 ms`
+- aggregate mart p50 latency: `528 ms`
+- star-schema p50 latency: `784 ms`
 
 ## Last Verified Ask AI History Display
 

@@ -15,9 +15,10 @@ product-style demo, không phải production cloud system.
 - Phase 25 pipeline hardening: atomic downloads, checksum-aware Bronze
   idempotency, source availability classification, dbt run summaries, and
   pipeline run metadata under MinIO `metadata/pipeline_runs/...`.
-- Phase 30-35 defense polish: selected local-first defense/demo polish as the
+- Phase 30-37 defense polish: selected local-first defense/demo polish as the
   current direction, refreshed host and Docker/API runtime verification
-  evidence, and froze scope before defense.
+  evidence, improved agent trace/answer quality metrics, and froze scope before
+  defense.
 - Gold star schema: `fact_trips`, `dim_date`, `dim_zone`,
   `dim_service_type`, `dim_vendor`, `dim_payment_type`.
 - Gold aggregate marts: `gold_daily_kpis`, `gold_zone_demand`.
