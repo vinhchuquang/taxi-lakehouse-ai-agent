@@ -46,8 +46,9 @@ graduation project without adding unnecessary agent frameworks.
   common questions, while controlled fact/dim API exposure supports vendor,
   payment type, pickup zone, and dropoff zone analysis.
 - The semantic catalog, dbt schema docs, and human documentation are separate
-  sources that can drift. A future consistency test should compare Gold model
-  names and catalog entries.
+  sources that can drift. Release checks cover current consistency expectations,
+  but future agent-visible schema changes should still update catalog metadata
+  and tests in the same change.
 - `fact_trips` currently has a clear grain but no explicit surrogate key. This
   is acceptable for the current serving layer, but a `trip_key` should be
   considered if lineage, row-level drilldown, or stronger uniqueness tests are
@@ -56,11 +57,15 @@ graduation project without adding unnecessary agent frameworks.
   project should evaluate materializing large Gold objects if demo latency or
   repeated queries become a problem.
 - The Airflow DAG now has a real `publish_metadata` task that writes local JSON
-  pipeline run summaries and uploads them to MinIO. Docker/Airflow verification
-  for a fresh manual run remains the open Phase 25 check.
+  pipeline run summaries and uploads them to MinIO. Phase 25 Docker/Airflow
+  verification passed on `2026-05-06`; the latest Docker/API defense-polish
+  verification passed on `2026-05-11`.
 - Some API and guardrail tests can skip when optional dependencies are missing.
   A defense verification environment should install the full project dependency
   set and record non-skipped test results.
+- Existing January 2024 Bronze objects predate Phase 25 checksum metadata and
+  are classified as `skipped_existing_unverified` in the latest pipeline
+  metadata. This is documented evidence, not a silent ingestion failure.
 
 ## Defense Narrative
 

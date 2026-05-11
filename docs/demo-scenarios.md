@@ -1,6 +1,8 @@
 # Demo Scenario Pack
 
-Last verified: `2026-05-06`
+Last runtime verification: `2026-05-11`
+
+Last host/docs verification: `2026-05-11`
 
 Defense dataset window: `2024-01-01` through `2024-06-30`
 
@@ -90,6 +92,9 @@ For blocked scenarios, the UI should show:
 
 ## Caveats
 
+- Fresh Docker/API checks were rerun on `2026-05-11` after Docker Desktop became
+  available. API health, Streamlit, Airflow health, API smoke checks, and the
+  agent evaluation harness passed.
 - The Ask AI tab may use deterministic planning or LLM planning depending on the
   prompt. Guardrails remain the enforcement point before execution.
 - OpenAI answer synthesis is optional. The default demo can use deterministic

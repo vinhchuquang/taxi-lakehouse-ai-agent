@@ -1,6 +1,6 @@
 # Release Checklist
 
-Verification date: `2026-05-03`
+Verification date: `2026-05-11`
 
 Use this checklist before a thesis defense, final submission, or handoff. It is
 designed for the current local-first MVP, not for production cloud deployment.
@@ -118,9 +118,12 @@ Phase 24 selected extension direction:
 
 Current active next phase:
 
-- Phase 30 decision gate: choose exactly one next extension direction after
-  Phase 25-29 pipeline, quality gate, planner, evaluation, and rehearsal work.
-  Default to public demo hardening only if the app must leave localhost.
+- Phase 35 runtime verification recheck is complete as of `2026-05-11`.
+- Phase 36 GitHub handoff and defense freeze is the next planned step.
+- After Phase 36, hold the defense-ready baseline unless a fresh verification
+  defect blocks the demo.
+- Public demo hardening, performance/materialization changes, and data-scope
+  expansion remain deferred until after defense or a separate decision gate.
 
 Phase 25 pipeline evidence should include:
 
@@ -153,6 +156,29 @@ python scripts/agent_eval.py --base-url http://localhost:8000 --window 2024-H1 -
 Do not mix this with public deployment hardening, performance materialization,
 or new data-source work in the same phase. Any API agent change still needs
 tests plus API smoke checks for success, clarification, and blocked SQL.
+
+Phase 30-34 defense polish verification on `2026-05-11`:
+
+- `python -m pytest -p no:cacheprovider` passed with `44 passed, 2 skipped`.
+- `python scripts/release_check.py` passed.
+- `python scripts/check_pipeline_run.py --run-id phase25_2024_01_20260506 --local-only`
+  passed.
+- Docker Desktop was unavailable in this host session, so fresh Docker/API
+  smoke checks were not rerun during the initial defense-polish pass. This was
+  superseded by the completed Phase 35 runtime recheck later on `2026-05-11`.
+
+Phase 35 runtime recheck on `2026-05-11`:
+
+- Host checks still passed:
+  `python -m pytest -p no:cacheprovider`,
+  `python scripts/release_check.py`, and
+  `python scripts/check_pipeline_run.py --run-id phase25_2024_01_20260506 --local-only`.
+- Docker became available; `docker compose up -d` started the existing stack.
+- API `/healthz`, Streamlit, and Airflow `/health` returned HTTP `200`.
+- API smoke checks passed for valid Gold query, blocked DDL, and blocked
+  detailed wildcard access.
+- `python scripts/agent_eval.py --base-url http://localhost:8000 --window 2024-H1 --output docs/agent-evaluation-results.json`
+  passed `11/11` cases.
 
 ## Security Review
 
@@ -264,11 +290,14 @@ smoke checks before presenting the project.
 Before handoff:
 
 - Final handoff snapshot tag: `thesis-final-handoff-2026-05-02`.
+- Latest defense-polish handoff snapshot: Phase 34 completed on `2026-05-11`;
+  create a new tag only if the reviewer requires one.
 - `docs/development-roadmap.md` has explicit phase statuses.
 - `docs/runbook.md` records the latest verification results.
 - `docs/data-quality-report.md`, `docs/agent-evaluation.md`,
   `docs/demo-scenarios.md`, `docs/performance-report.md`, and
   `docs/security-notes.md` are current.
 - No real secrets are committed or copied into release notes.
-- Known caveats are stated clearly, especially warning-only data anomalies and
+- Known caveats are stated clearly, especially warning-only data anomalies,
+  Docker availability, pre-Phase-25 Bronze checksum metadata gaps, and
   host-local dependency-gated tests.

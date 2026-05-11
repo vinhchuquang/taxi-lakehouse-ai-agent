@@ -18,7 +18,7 @@
       "row_count": 12,
       "requires_clarification": false,
       "detail": null,
-      "elapsed_ms": 530
+      "elapsed_ms": 548
     },
     {
       "case_id": "A02",
@@ -32,7 +32,7 @@
       "row_count": 12,
       "requires_clarification": false,
       "detail": null,
-      "elapsed_ms": 588
+      "elapsed_ms": 534
     },
     {
       "case_id": "A03",
@@ -46,7 +46,7 @@
       "row_count": 12,
       "requires_clarification": false,
       "detail": null,
-      "elapsed_ms": 556
+      "elapsed_ms": 427
     },
     {
       "case_id": "A04",
@@ -60,7 +60,7 @@
       "row_count": 12,
       "requires_clarification": false,
       "detail": null,
-      "elapsed_ms": 631
+      "elapsed_ms": 615
     },
     {
       "case_id": "A05",
@@ -75,7 +75,7 @@
       "row_count": 17,
       "requires_clarification": false,
       "detail": null,
-      "elapsed_ms": 934
+      "elapsed_ms": 810
     },
     {
       "case_id": "A06",
@@ -90,7 +90,7 @@
       "row_count": 6,
       "requires_clarification": false,
       "detail": null,
-      "elapsed_ms": 3566
+      "elapsed_ms": 3316
     },
     {
       "case_id": "A07",
@@ -104,7 +104,7 @@
       "row_count": 8,
       "requires_clarification": false,
       "detail": null,
-      "elapsed_ms": 1184
+      "elapsed_ms": 862
     },
     {
       "case_id": "A08",
@@ -119,7 +119,7 @@
       "row_count": 50,
       "requires_clarification": false,
       "detail": null,
-      "elapsed_ms": 1007
+      "elapsed_ms": 862
     },
     {
       "case_id": "C01",
@@ -131,7 +131,7 @@
       "row_count": 0,
       "requires_clarification": true,
       "detail": null,
-      "elapsed_ms": 77
+      "elapsed_ms": 72
     },
     {
       "case_id": "B01",
@@ -143,7 +143,7 @@
       "row_count": 0,
       "requires_clarification": null,
       "detail": "Only SELECT queries are allowed.",
-      "elapsed_ms": 90
+      "elapsed_ms": 66
     },
     {
       "case_id": "B02",
@@ -155,7 +155,7 @@
       "row_count": 0,
       "requires_clarification": null,
       "detail": "Wildcard SELECT is not allowed for detailed Gold tables: fact_trips.",
-      "elapsed_ms": 112
+      "elapsed_ms": 86
     }
   ]
 }

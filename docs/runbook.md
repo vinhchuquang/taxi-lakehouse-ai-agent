@@ -726,12 +726,13 @@ Implemented realistic behavior:
 - Silver applies validity filters; Gold star schema and marts are tested and
   served through the read-only agent.
 
-Remaining temporary or incomplete operational pieces:
+Historical temporary or incomplete operational pieces from the 2026-05-03
+assessment:
 
-- Docker/Airflow verification for the new `publish_metadata` task remains
-  pending.
-- Ingestion results now flow into durable metadata JSON, but a fresh manual DAG
-  run still needs to confirm the object appears in MinIO.
+- Docker/Airflow verification for the new `publish_metadata` task was pending
+  on 2026-05-03 and completed on 2026-05-06.
+- Ingestion results now flow into durable metadata JSON, and the 2026-05-06
+  manual DAG run confirmed the object appears in MinIO.
 - Existing Bronze object validation is checksum-aware when object metadata is
   present; older pre-Phase 25 objects without metadata are still classified as
   unverified rather than rehashed from MinIO.
@@ -746,19 +747,20 @@ Remaining temporary or incomplete operational pieces:
 Phase 25 handling plan:
 
 1. Implement durable run metadata in the `publish_metadata` step. Completed in
-   code on `2026-05-03`; Docker/Airflow run verification remains pending.
+   code on `2026-05-03`; Docker/Airflow run verification completed on
+   `2026-05-06`.
 2. Strengthen ingestion idempotency with atomic downloads and checksum-aware
    existing-object validation. Completed in unit-tested code on `2026-05-03`.
 3. Add source completeness checks that separate expected TLC publication delay
    from stale missing months. Completed in unit-tested code on `2026-05-03`.
 4. Persist dbt run summaries into the pipeline run metadata. Completed in
-   unit-tested code on `2026-05-03`; Docker/Airflow run verification remains
-   pending.
+   unit-tested code on `2026-05-03`; Docker/Airflow run verification completed
+   on `2026-05-06`.
 5. Formalize quality-gate thresholds for warning-only anomaly tests. Initial
    quality gate summary completed; detailed anomaly thresholds remain a future
    tightening step.
 6. Document and test safe monthly backfill/recovery. Backfill policy documented
-   below; Docker/Airflow run verification remains pending.
+   below; Docker/Airflow run verification completed on `2026-05-06`.
 7. Keep the current MVP scope unchanged: Yellow, Green, Taxi Zone Lookup, local
    MinIO/DuckDB, and read-only Gold serving.
 
@@ -896,6 +898,127 @@ Phase 29 rehearsal refresh:
 - Release API smoke checks passed for valid Gold query, blocked DDL, and blocked
   detailed fact wildcard query.
 - Ask AI history remains session-local display only and is not sent to the API.
+
+## Last Verified Phase 30-34 Defense Polish State
+
+Last verification: `2026-05-11`.
+
+Defense-polish decision:
+
+- Phase 30 selected defense/demo polish for the next 1-2 weeks.
+- The project remains local-first with the fixed `2024-H1` defense window.
+- Public demo hardening, FHV/HVFHV, streaming, write-capable agents, production
+  auth, agent-framework adoption, and materialization changes remain deferred.
+
+Host verification completed:
+
+```bash
+python -m pytest -p no:cacheprovider
+python scripts/release_check.py
+python scripts/check_pipeline_run.py --run-id phase25_2024_01_20260506 --local-only
+docker compose ps
+```
+
+Results:
+
+- `python -m pytest -p no:cacheprovider` passed with `44 passed, 2 skipped`.
+- `python scripts/release_check.py` passed.
+- Pipeline metadata check passed for
+  `data/metadata/pipeline_runs/taxi_monthly_pipeline/2026-03-15/phase25_2024_01_20260506.json`.
+- The metadata check reported run mode `manual`, target month `2024-01`,
+  quality gate `passed_with_warnings`, and dbt counts `pass=77`, `warn=2`,
+  `error=0`, `skip=0`.
+- `docker compose ps` could not connect because Docker Desktop's
+  `dockerDesktopLinuxEngine` pipe was not present in this host session.
+
+Runtime verification caveat:
+
+- Fresh Docker/API/Streamlit/Airflow checks were not rerun on `2026-05-11`
+  during the initial defense-polish pass because Docker was unavailable.
+- This caveat was superseded by the completed Phase 35 runtime recheck later on
+  `2026-05-11`.
+- When Docker is available, rerun:
+
+  ```bash
+  docker compose up -d
+  python scripts/agent_eval.py --base-url http://localhost:8000 --window 2024-H1 --output docs/agent-evaluation-results.json
+  ```
+
+- Also repeat API smoke checks for a valid Gold query, blocked DDL, and blocked
+  detailed wildcard access before a live defense.
+
+Defense demo caveats:
+
+- Existing January 2024 Bronze objects were created before Phase 25 checksum
+  metadata and remain classified as `skipped_existing_unverified`.
+- The current quality gate can pass as `passed_with_warnings` when warnings are
+  known dbt anomaly tests and there are no dbt errors or blocking ingestion
+  statuses.
+- OpenAI answer synthesis remains optional and should stay disabled unless the
+  demo explicitly needs generated prose grounded in executed rows.
+- Ask AI history is session-local UI display only; it is not API memory.
+
+Next action:
+
+- Hold the defense-ready baseline.
+- Rerun Docker/API smoke checks when Docker Desktop is available.
+- Avoid feature scope until after defense unless a verification defect blocks
+  the demo.
+
+## Last Verified Phase 35 Runtime Verification Recheck
+
+Last verification: `2026-05-11`.
+
+Purpose:
+
+- Refresh runtime evidence before defense using the already-built Docker stack.
+- Keep this as verification only: no API contract, dbt model, semantic catalog,
+  Docker Compose, dependency, or architecture changes.
+
+Host checks rerun:
+
+```bash
+python -m pytest -p no:cacheprovider
+python scripts/release_check.py
+python scripts/check_pipeline_run.py --run-id phase25_2024_01_20260506 --local-only
+docker compose up -d
+docker compose ps
+python scripts/agent_eval.py --base-url http://localhost:8000 --window 2024-H1 --output docs/agent-evaluation-results.json
+```
+
+Results:
+
+- `python -m pytest -p no:cacheprovider` passed with `44 passed, 2 skipped`.
+- `python scripts/release_check.py` passed.
+- Pipeline metadata check passed for run `phase25_2024_01_20260506`, with
+  quality gate `passed_with_warnings` and dbt counts `pass=77`, `warn=2`,
+  `error=0`, `skip=0`.
+- `docker compose up -d` started the existing stack after Docker Desktop became
+  available.
+- `docker compose ps` confirmed Airflow Postgres, Airflow scheduler, Airflow
+  webserver, API, demo, and MinIO were running.
+- API `/healthz` returned `status=ok`, `semantic_catalog_loaded=true`,
+  `duckdb_exists=true`, and `duckdb_connectable=true`.
+- Streamlit returned HTTP `200`.
+- Airflow `/health` returned HTTP `200`; metadatabase and scheduler were
+  healthy.
+- API smoke checks passed:
+  - valid `gold_daily_kpis` query returned HTTP `200`, five rows, and seven
+    `agent_steps`
+  - `drop table gold_daily_kpis` returned HTTP `400` with `Only SELECT queries
+    are allowed.`
+  - `select * from fact_trips` returned HTTP `400` with the detailed Gold
+    wildcard rejection
+- `python scripts/agent_eval.py --base-url http://localhost:8000 --window
+  2024-H1 --output docs/agent-evaluation-results.json` passed `11/11` cases.
+
+Status:
+
+- Phase 35 is complete.
+- The latest complete Docker/API runtime verification is now `2026-05-11`.
+- Next planned phase is Phase 36 GitHub handoff and defense freeze.
+- After Phase 36, hold the defense-ready baseline unless a fresh verification
+  defect blocks the demo.
 
 ## Last Verified Ask AI History Display
 

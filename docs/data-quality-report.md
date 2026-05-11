@@ -175,6 +175,11 @@ Interpretation:
   queries must filter to `2024-H1` when stable results are required.
 - Warning-only anomaly tests intentionally do not fail the pipeline. They are
   evidence for data quality discussion, not proof of corrupted transformations.
+- The latest Phase 25 metadata check reports `passed_with_warnings` with no dbt
+  errors or blocking ingestion statuses.
+- Existing January 2024 Bronze objects predate checksum metadata and are
+  classified as `skipped_existing_unverified`; new Phase 25 uploads carry file
+  metadata when available.
 - Taxi Zone Lookup is the only reference dataset in scope.
 - FHV, HVFHV, streaming ingestion, write-capable agents, multi-tenant auth, and
   production cloud deployment remain out of scope for the thesis-ready MVP.

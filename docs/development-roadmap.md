@@ -1113,9 +1113,10 @@ Reality assessment:
   local downloads, new Bronze uploads carry file metadata, existing objects are
   classified as verified or unverified, source `403/404` responses distinguish
   recent publication lag from historical gaps, and dbt builds return
-  `run_results.json` summaries. Remaining gaps are Docker/Airflow verification
-  of the metadata object, threshold tuning for warning-only anomaly tests, and
-  the known host-local dependency-gated API/guardrail skips.
+  `run_results.json` summaries. The later 2026-05-06 Docker/Airflow run closed
+  the metadata-object verification gap. Remaining caveats are threshold tuning
+  for warning-only anomaly tests and the known host-local dependency-gated
+  API/guardrail skips.
 
 Superseded next step:
 
@@ -1338,17 +1339,325 @@ Next step: Phase 30, Next Extension Decision Gate.
 
 ## Phase 30: Next Extension Decision Gate
 
-Status: planned.
+Status: completed on 2026-05-11.
 
 Goal: choose exactly one direction after the pipeline and agent coverage work is
 stable.
 
-Default recommendation:
+Selected direction:
 
-- Keep the project local-first unless the app must leave localhost.
-- Choose public demo hardening only when external access is required.
-- Keep performance/materialization and data-scope expansion deferred until a
-  separate decision phase provides concrete evidence.
+- Defense/demo polish for the next 1-2 weeks.
+- Keep the project local-first and preserve the existing MVP scope.
+- Do not mix this track with public deployment hardening, FHV/HVFHV,
+  streaming, production auth, write-capable agents, agent-framework adoption, or
+  performance/materialization changes.
+
+Completed:
+
+- Chose defense polish as the next extension direction after Phase 25-29
+  pipeline, quality gate, planner, evaluation, and rehearsal work.
+- Reconfirmed `2024-H1` as the fixed defense/demo/evaluation window.
+- Kept public demo hardening deferred until the app must leave localhost.
+- Kept performance/materialization work deferred until fresh benchmark evidence
+  shows a concrete need.
+- Kept data-scope expansion deferred to avoid widening the stable Yellow/Green
+  MVP before defense.
+
+Verification:
+
+- `python scripts/release_check.py` passed on 2026-05-11.
+
+Next step: Phase 31, Verification Evidence Refresh.
+
+## Phase 31: Verification Evidence Refresh
+
+Status: completed on 2026-05-11.
+
+Goal: refresh evidence for the current MVP without changing behavior.
+
+Completed:
+
+- Re-ran the host unit test suite.
+- Re-ran release hygiene checks.
+- Revalidated the latest Phase 25 pipeline metadata copy for Airflow run
+  `phase25_2024_01_20260506`.
+- Checked Docker availability for runtime/API verification.
+- Recorded Docker Desktop as unavailable in this environment because the
+  `dockerDesktopLinuxEngine` pipe was not present.
+
+Verification:
+
+- `python -m pytest -p no:cacheprovider` passed with `44 passed, 2 skipped`.
+- `python scripts/release_check.py` passed.
+- `python scripts/check_pipeline_run.py --run-id phase25_2024_01_20260506
+  --local-only` passed with quality gate `passed_with_warnings`, dbt counts
+  `pass=77`, `warn=2`, `error=0`, and `skip=0`.
+- `docker compose ps` could not connect to Docker Desktop in this host session,
+  so fresh Docker/API smoke checks were not rerun on 2026-05-11. The latest
+  Docker/API verification at that point remained the Phase 29 evidence from
+  2026-05-06. This caveat was superseded by the completed Phase 35 runtime
+  recheck later on 2026-05-11.
+
+Next step: Phase 32, Demo Rehearsal Pack.
+
+## Phase 32: Demo Rehearsal Pack
+
+Status: completed on 2026-05-11.
+
+Goal: keep the fixed `2024-H1` defense demo repeatable and explainable.
+
+Completed:
+
+- Kept the official demo flow centered on pipeline evidence, schema browsing,
+  Ask AI, SQL override, guardrail blocks, chart/export, and session-local Ask AI
+  history.
+- Reconfirmed that Ask AI history is UI-session display only, not API memory or
+  multi-turn context.
+- Reconfirmed that OpenAI answer synthesis remains optional; default demo
+  answers can stay deterministic and grounded in returned rows.
+- Kept API response shape, semantic catalog, dbt models, and Docker config
+  unchanged.
+
+Verification:
+
+- Demo runtime checks depend on Docker/API availability. Docker was unavailable
+  during the initial Phase 32 review, so Phase 29 from 2026-05-06 remained the
+  latest runtime demo evidence at that point. This caveat was superseded by the
+  completed Phase 35 runtime recheck later on 2026-05-11.
+- Host-side release and metadata checks passed as Phase 31 evidence.
+
+Next step: Phase 33, Defense Narrative And Caveat Freeze.
+
+## Phase 33: Defense Narrative And Caveat Freeze
+
+Status: completed on 2026-05-11.
+
+Goal: align the project story and caveats before defense without adding
+features.
+
+Completed:
+
+- Reaffirmed the project narrative: local-first lakehouse first, read-only
+  Gold-only AI agent on top.
+- Made current caveats explicit across the handoff docs: local-first runtime,
+  warning-only anomaly tests, pre-Phase-25 Bronze objects without checksum
+  metadata, no production security, and fixed `2024-H1` defense window.
+- Preserved deferred scope: no FHV/HVFHV, streaming, write-capable agents,
+  production cloud deployment, public-demo hardening, or materialization change.
+
+Verification:
+
+- Documentation consistency was reviewed while updating roadmap, runbook,
+  release checklist, demo scenarios, architecture review, and data quality
+  caveats.
+- `python scripts/release_check.py` passed on 2026-05-11.
+
+Next step: Phase 34, Final Handoff Snapshot.
+
+## Phase 34: Final Handoff Snapshot
+
+Status: completed on 2026-05-11.
+
+Goal: leave a clear handoff point with current verification, caveats, and rerun
+commands.
+
+Completed:
+
+- Recorded Phase 30-34 as a defense-polish track, not a product-scope expansion.
+- Captured the latest host verification and Docker availability caveat.
+- Kept final rerun commands explicit for future agents and reviewers.
+
+Final verification on 2026-05-11:
+
+- `python -m pytest -p no:cacheprovider` passed with `44 passed, 2 skipped`.
+- `python scripts/release_check.py` passed.
+- `python scripts/check_pipeline_run.py --run-id phase25_2024_01_20260506
+  --local-only` passed.
+
+Remaining caveats:
+
+- Docker Desktop was unavailable during the initial 2026-05-11 host session,
+  then became available for the Phase 35 runtime recheck.
+- Phase 25 metadata for existing January 2024 Bronze objects is classified as
+  `skipped_existing_unverified` because those objects predate checksum metadata.
+- The quality gate is `passed_with_warnings` due to warning-only dbt anomaly
+  tests, with no dbt errors or blocking ingestion statuses.
+
+Next step: Phase 35, Runtime Verification Recheck Gate.
+
+## Phase 35: Runtime Verification Recheck Gate
+
+Status: completed on 2026-05-11.
+
+Goal: refresh Docker/API/Streamlit/Airflow runtime evidence immediately before
+defense, without changing behavior or widening scope.
+
+Completed:
+
+- Re-ran host verification to confirm the docs and code-level checks still pass.
+- Revalidated the latest Phase 25 pipeline metadata copy.
+- Started the existing Docker stack with `docker compose up -d`.
+- Confirmed Docker Compose service status.
+- Confirmed API `/healthz`, Streamlit, and Airflow health endpoints.
+- Re-ran API smoke checks for valid Gold query, blocked DDL, and blocked
+  detailed wildcard access.
+- Re-ran the agent evaluation harness for `2024-H1`.
+
+Verification completed:
+
+- `python -m pytest -p no:cacheprovider` passed with `44 passed, 2 skipped`.
+- `python scripts/release_check.py` passed.
+- `python scripts/check_pipeline_run.py --run-id phase25_2024_01_20260506
+  --local-only` passed with quality gate `passed_with_warnings`, dbt counts
+  `pass=77`, `warn=2`, `error=0`, and `skip=0`.
+- `docker compose up -d` started the existing stack after Docker Desktop became
+  available.
+- `docker compose ps` confirmed Airflow Postgres, Airflow scheduler, Airflow
+  webserver, API, demo, and MinIO were running.
+- API `/healthz` returned `status=ok`, semantic catalog loaded, and DuckDB
+  connectable.
+- Streamlit returned HTTP `200`.
+- Airflow `/health` returned HTTP `200` with healthy metadatabase and scheduler.
+- API smoke checks passed:
+  - valid `gold_daily_kpis` query returned HTTP `200`, five rows, and
+    `agent_steps`
+  - `drop table gold_daily_kpis` returned HTTP `400`
+  - `select * from fact_trips` returned HTTP `400`
+- `python scripts/agent_eval.py --base-url http://localhost:8000 --window
+  2024-H1 --output docs/agent-evaluation-results.json` passed `11/11` cases.
+
+Next step: Phase 36, GitHub Handoff And Defense Freeze.
+
+## Phase 36: GitHub Handoff And Defense Freeze
+
+Status: planned.
+
+Goal: publish the defense-ready baseline to GitHub and keep the project frozen
+for defense unless a verification defect blocks the demo.
+
+Planned work:
+
+- Commit and push the Phase 30-35 defense-polish and runtime verification
+  evidence to `origin/main`.
+- Confirm the pushed branch includes the refreshed
+  `docs/agent-evaluation-results.json` with `11/11` passing cases.
+- Keep Docker stack startup, health checks, API smoke checks, and release checks
+  as the final defense rerun commands.
+- Do not add feature scope, new data sources, materialization changes, public
+  deployment hardening, or production auth in this phase.
+
+Completion criteria:
+
+- `git status --short` is clean after push.
+- `git log --oneline -1` identifies the handoff commit.
+- GitHub remote `origin/main` contains the handoff commit.
+
+Next step: Phase 37, Defense Dry Run And Evidence Walkthrough.
+
+## Phase 37: Defense Dry Run And Evidence Walkthrough
+
+Status: planned.
+
+Goal: rehearse the project end to end as it will be shown to reviewers.
+
+Planned work:
+
+- Walk through `README.md`, `docs/demo-scenarios.md`, `docs/runbook.md`, and
+  `docs/release-checklist.md` in defense order.
+- Run the official `2024-H1` Streamlit demo path: schema, Ask AI, SQL override,
+  guardrail blocks, chart/export, and Ask AI history.
+- Use the latest Phase 35 runtime evidence as the baseline; rerun checks only if
+  Docker or data state changes.
+- Record any demo-only wording issues in docs, not code, unless a defect blocks
+  execution.
+
+Completion criteria:
+
+- Reviewer-facing demo flow can be completed in 10-15 minutes.
+- Known caveats are stated before questions: local-first runtime,
+  warning-only anomaly tests, and pre-Phase-25 unverified existing Bronze
+  objects.
+- No new runtime behavior is introduced during rehearsal.
+
+Next step: Phase 38, Post-Defense Direction Decision Gate.
+
+## Phase 38: Post-Defense Direction Decision Gate
+
+Status: planned.
+
+Goal: choose exactly one post-defense product direction after the defense
+baseline is accepted.
+
+Decision options:
+
+- Public demo hardening: only if the app must leave localhost.
+- Agent coverage extension: only if reviewers request broader natural-language
+  question coverage while preserving Gold-only read-only behavior.
+- Operational hardening: only if pipeline recovery, checksum backfill, or
+  quality gate policy becomes the main product risk.
+- Performance/materialization review: only if fresh benchmarks show unacceptable
+  demo or query latency.
+
+Default:
+
+- Keep the project frozen until after defense, then choose exactly one direction
+  before implementation.
+
+Completion criteria:
+
+- Roadmap records one selected direction and explicitly defers the others.
+- The selected direction includes verification commands and scope boundaries.
+
+Next step: Phase 39, Selected Post-Defense Implementation Track.
+
+## Phase 39: Selected Post-Defense Implementation Track
+
+Status: planned.
+
+Goal: implement the single direction chosen in Phase 38 without mixing unrelated
+product tracks.
+
+Default implementation rules:
+
+- Keep Yellow Taxi, Green Taxi, and Taxi Zone Lookup as the only data sources
+  unless Phase 38 explicitly chooses a data-scope expansion.
+- Keep the AI agent read-only and Gold-only.
+- Keep aggregate marts as the fast path and fact/dim queries as controlled
+  semantic-catalog paths.
+- Update tests, runbook, release checklist, and roadmap in the same change as
+  any behavior change.
+
+Verification:
+
+- Python/unit changes: `python -m pytest -p no:cacheprovider`.
+- API/agent changes: API smoke checks plus `scripts/agent_eval.py`.
+- Pipeline changes: pipeline metadata checker plus Docker/Airflow verification.
+- dbt changes: dbt build through the Airflow scheduler container.
+
+Next step: Phase 40, Post-Implementation Release Gate.
+
+## Phase 40: Post-Implementation Release Gate
+
+Status: planned.
+
+Goal: package the selected post-defense work with repeatable verification and a
+clear handoff state.
+
+Planned work:
+
+- Refresh release notes, runbook evidence, demo scenarios, and evaluation
+  results for the selected Phase 39 work.
+- Confirm no generated dbt artifacts or local secrets are tracked.
+- Confirm runtime smoke checks and release checks pass.
+- Decide whether to create a new tag only after the selected Phase 39 work is
+  verified.
+
+Completion criteria:
+
+- `python -m pytest -p no:cacheprovider` passes.
+- `python scripts/release_check.py` passes.
+- Runtime checks relevant to the selected track pass.
+- Roadmap records completed work, caveats, and the next decision point.
 
 ## Documentation And Handoff Rule
 
