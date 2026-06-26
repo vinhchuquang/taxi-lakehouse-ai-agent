@@ -1,0 +1,47 @@
+{
+  "cores": 12,
+  "duration_s": 15.0,
+  "threads_per_conn": null,
+  "levels": [
+    {
+      "concurrency": 8,
+      "queries": 202,
+      "elapsed_s": 15.48,
+      "throughput_qps": 13.0,
+      "p50_ms": 439.2,
+      "p95_ms": 1736.1,
+      "p99_ms": 2290.6,
+      "mean_ms": 599.9
+    },
+    {
+      "concurrency": 16,
+      "queries": 230,
+      "elapsed_s": 16.15,
+      "throughput_qps": 14.2,
+      "p50_ms": 753.1,
+      "p95_ms": 3406.3,
+      "p99_ms": 4416.8,
+      "mean_ms": 1083.5
+    },
+    {
+      "concurrency": 32,
+      "queries": 253,
+      "elapsed_s": 16.53,
+      "throughput_qps": 15.3,
+      "p50_ms": 1093.7,
+      "p95_ms": 6124.1,
+      "p99_ms": 7201.5,
+      "mean_ms": 1971.5
+    },
+    {
+      "concurrency": 64,
+      "queries": 214,
+      "elapsed_s": 17.95,
+      "throughput_qps": 11.9,
+      "p50_ms": 3779.6,
+      "p95_ms": 11785.6,
+      "p99_ms": 12475.6,
+      "mean_ms": 4839.5
+    }
+  ]
+}

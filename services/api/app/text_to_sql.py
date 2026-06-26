@@ -45,7 +45,11 @@ def generate_sql_with_openai(
                     "Use only cataloged columns and cataloged join paths. "
                     "Do not use SELECT * for detailed fact or dimension tables. "
                     "Do not use DML, DDL, PRAGMA, COPY, ATTACH, or external files. "
-                    f"Apply a LIMIT no greater than {max_rows} unless the query is an aggregate."
+                    f"Apply a LIMIT no greater than {max_rows} unless the query is an aggregate. "
+                    "If the question asks for a specific top-N or a single extreme "
+                    "(for example 'top 5', 'nhieu nhat', 'cao nhat', 'which ... most'), add the "
+                    "matching LIMIT (LIMIT N, or LIMIT 1 for a single extreme) even for aggregates, "
+                    "with an ORDER BY on the ranked metric."
                 ),
             },
             {

@@ -496,7 +496,41 @@ def repair_sql_once(context: AgentContext, bad_sql: str, error: str) -> str:
     return repaired
 
 
+_TOP_N = re.compile(r"\btop\s+(\d+)\b")
+
+
+def extract_top_n(question: str) -> int | None:
+    """Row cap implied by a ranking question (question is already normalized to ascii):
+    'top 5' -> 5; a singular superlative ('... nao ... nhat', 'which ... most') -> 1."""
+    match = _TOP_N.search(question)
+    if match:
+        return int(match.group(1))
+    if "nhat" in question and "nao" in question:
+        return 1
+    if any(w in question for w in ("highest", "most", "largest", "longest", "maximum")) and any(
+        w in question for w in ("which", "what")
+    ):
+        return 1
+    return None
+
+
 def deterministic_sql_for_plan(
+    question: str,
+    plan: QueryPlan | None,
+    catalog: SchemaResponse,
+) -> str | None:
+    sql = _deterministic_sql_base(question, plan, catalog)
+    if not sql:
+        return sql
+    top_n = extract_top_n(normalize_question(question))
+    # Apply the requested cap only to ranking templates (ORDER BY ... DESC) that have no
+    # LIMIT yet. ponytail: a global LIMIT, not per-group; fine since questions ask one ranking.
+    if top_n and re.search(r"\bDESC\b", sql) and not re.search(r"\blimit\b", sql, re.IGNORECASE):
+        sql = f"{sql}\nLIMIT {top_n}"
+    return sql
+
+
+def _deterministic_sql_base(
     question: str,
     plan: QueryPlan | None,
     catalog: SchemaResponse,
@@ -513,7 +547,11 @@ def deterministic_sql_for_plan(
     metric = metric_for_question(normalized)
     month_expr = "strftime(pickup_date, '%Y-%m')"
     if plan.intent == "monthly_trip_trend":
-        where_clause = f"\nWHERE {date_filter.replace('pickup_date', 'f.pickup_date')}" if date_filter else ""
+        service = service_type_filter(normalized)
+        where_clause = build_where([
+            date_filter.replace("pickup_date", "f.pickup_date"),
+            f"f.service_type = '{service}'" if service else "",
+        ])
         return (
             "SELECT\n"
             "  d.year_month,\n"
@@ -561,48 +599,61 @@ def deterministic_sql_for_plan(
         )
 
     if plan.intent == "zone_demand":
-        where_clause = f"\nWHERE {date_filter}" if date_filter else ""
+        service = service_type_filter(normalized)
+        clause = build_where([date_filter, f"service_type = '{service}'" if service else ""])
+        order_col = rank_column(metric, {"trip_count", "total_amount"})
         return (
             "SELECT\n"
             "  zone_name,\n"
             "  borough,\n"
             "  SUM(trip_count) AS trip_count,\n"
             "  SUM(total_amount) AS total_amount\n"
-            "FROM gold_zone_demand\n"
-            f"{where_clause}\n"
+            "FROM gold_zone_demand"
+            f"{clause}\n"
             "GROUP BY zone_name, borough\n"
-            "ORDER BY trip_count DESC"
+            f"ORDER BY {order_col} DESC"
         )
 
     if plan.intent == "pickup_borough_demand":
-        where_clause = f"\nWHERE {date_filter}" if date_filter else ""
+        service = service_type_filter(normalized)
+        clause = build_where([date_filter, f"service_type = '{service}'" if service else ""])
+        order_col = rank_column(metric, {"trip_count", "total_amount"})
         return (
             "SELECT\n"
             "  borough,\n"
             "  SUM(trip_count) AS trip_count,\n"
             "  SUM(total_amount) AS total_amount\n"
-            "FROM gold_zone_demand\n"
-            f"{where_clause}\n"
+            "FROM gold_zone_demand"
+            f"{clause}\n"
             "GROUP BY borough\n"
-            "ORDER BY trip_count DESC"
+            f"ORDER BY {order_col} DESC"
         )
 
     if plan.intent == "dropoff_borough_demand":
-        where_clause = f"\nWHERE {date_filter.replace('pickup_date', 'f.pickup_date')}" if date_filter else ""
+        service = service_type_filter(normalized)
+        clause = build_where([
+            date_filter.replace("pickup_date", "f.pickup_date"),
+            f"f.service_type = '{service}'" if service else "",
+        ])
+        order_col = rank_column(metric, {"trip_count", "total_amount"})
         return (
             "SELECT\n"
             "  z.borough,\n"
             "  COUNT(*) AS trip_count,\n"
             "  SUM(f.total_amount) AS total_amount\n"
             "FROM fact_trips AS f\n"
-            "JOIN dim_zone AS z ON f.dropoff_zone_id = z.zone_id\n"
-            f"{where_clause}\n"
+            "JOIN dim_zone AS z ON f.dropoff_zone_id = z.zone_id"
+            f"{clause}\n"
             "GROUP BY z.borough\n"
-            "ORDER BY trip_count DESC"
+            f"ORDER BY {order_col} DESC"
         )
 
     if plan.intent == "vendor_analysis":
-        where_clause = f"\nWHERE {date_filter.replace('pickup_date', 'f.pickup_date')}" if date_filter else ""
+        service = service_type_filter(normalized)
+        clause = build_where([
+            date_filter.replace("pickup_date", "f.pickup_date"),
+            f"f.service_type = '{service}'" if service else "",
+        ])
         if has_monthly_intent(normalized) or has_trend_intent(normalized):
             return (
                 "SELECT\n"
@@ -613,34 +664,43 @@ def deterministic_sql_for_plan(
                 "FROM fact_trips AS f\n"
                 "JOIN dim_vendor AS v ON f.vendor_id = v.vendor_id\n"
                 "JOIN dim_date AS d ON f.pickup_date = d.pickup_date"
-                f"{where_clause}\n"
+                f"{clause}\n"
                 "GROUP BY d.year_month, v.vendor_name\n"
                 "ORDER BY d.year_month, trip_count DESC"
             )
+        order_col = rank_column(
+            metric, {"trip_count", "total_amount", "total_fare_amount", "avg_trip_distance"})
         return (
             "SELECT\n"
             "  v.vendor_name,\n"
             "  COUNT(*) AS trip_count,\n"
-            "  SUM(f.total_amount) AS total_amount\n"
+            "  SUM(f.total_amount) AS total_amount,\n"
+            "  SUM(f.fare_amount) AS total_fare_amount,\n"
+            "  AVG(f.trip_distance) AS avg_trip_distance\n"
             "FROM fact_trips AS f\n"
-            "JOIN dim_vendor AS v ON f.vendor_id = v.vendor_id\n"
-            f"{where_clause}\n"
+            "JOIN dim_vendor AS v ON f.vendor_id = v.vendor_id"
+            f"{clause}\n"
             "GROUP BY v.vendor_name\n"
-            "ORDER BY trip_count DESC"
+            f"ORDER BY {order_col} DESC"
         )
 
     if plan.intent == "payment_analysis":
-        where_clause = f"\nWHERE {date_filter.replace('pickup_date', 'f.pickup_date')}" if date_filter else ""
+        service = service_type_filter(normalized)
+        clause = build_where([
+            date_filter.replace("pickup_date", "f.pickup_date"),
+            f"f.service_type = '{service}'" if service else "",
+        ])
+        order_col = rank_column(metric, {"trip_count", "total_amount"})
         return (
             "SELECT\n"
             "  p.payment_type_name,\n"
             "  COUNT(*) AS trip_count,\n"
             "  SUM(f.total_amount) AS total_amount\n"
             "FROM fact_trips AS f\n"
-            "JOIN dim_payment_type AS p ON f.payment_type = p.payment_type\n"
-            f"{where_clause}\n"
+            "JOIN dim_payment_type AS p ON f.payment_type = p.payment_type"
+            f"{clause}\n"
             "GROUP BY p.payment_type_name\n"
-            "ORDER BY trip_count DESC"
+            f"ORDER BY {order_col} DESC"
         )
 
     if plan.intent == "pickup_dropoff_borough_comparison":
@@ -716,12 +776,12 @@ def build_query_plan(question: str, catalog: SchemaResponse) -> QueryPlan:
             expected_groupings=["borough"],
         )
 
-    if has_borough_intent(question) and has_pickup_intent(question):
+    if has_borough_intent(question) and not any(token in question for token in ("zone", "khu vuc")):
         return QueryPlan(
             intent="pickup_borough_demand",
             surface="aggregate_mart",
             selected_tables=["gold_zone_demand"],
-            reason="Pickup borough demand can use the curated pickup zone demand mart.",
+            reason="A borough-grain question (no zone wording) aggregates the zone demand mart to borough.",
             expected_groupings=["borough"],
         )
 
@@ -812,7 +872,13 @@ def normalize_question(question: str) -> str:
 
 
 def has_monthly_intent(question: str) -> bool:
-    return any(token in question for token in ("month", "monthly", "thang", "year_month"))
+    # Monthly GROUPING (a trend over months), not a specific-month FILTER like "thang 3"
+    # (which extract_month handles as a date filter). "theo thang"/"tung thang"/"moi thang"
+    # = group by month; a bare "thang 3" must not pull the query into a month-trend template.
+    return any(token in question for token in (
+        "monthly", "year_month", "by month", "per month",
+        "theo thang", "tung thang", "moi thang", "hang thang", "cac thang",
+    ))
 
 
 def has_trip_intent(question: str) -> bool:
@@ -876,9 +942,45 @@ def extract_year(question: str) -> int | None:
     return int(match.group(1))
 
 
+_MONTH = re.compile(r"\bthang\s+(\d{1,2})\b")
+
+
+def extract_month(question: str) -> int | None:
+    match = _MONTH.search(question)
+    if not match:
+        return None
+    month = int(match.group(1))
+    return month if 1 <= month <= 12 else None
+
+
+def service_type_filter(question: str) -> str | None:
+    """'taxi vang'/'yellow' -> yellow_taxi; 'taxi xanh'/'green' -> green_taxi; both or
+    neither -> None (no service filter, e.g. a yellow-vs-green comparison)."""
+    yellow = "yellow" in question or "vang" in question
+    green = "green" in question or "xanh" in question
+    if yellow == green:
+        return None
+    return "yellow_taxi" if yellow else "green_taxi"
+
+
+def rank_column(metric: str, available: set[str]) -> str:
+    """Rank by the metric the question asks for, when the template exposes it."""
+    return metric if metric in available else "trip_count"
+
+
+def build_where(conditions: list[str]) -> str:
+    conds = [c for c in conditions if c]
+    return ("\nWHERE " + "\n  AND ".join(conds)) if conds else ""
+
+
 def date_filter_for_question(question: str, year: int | None) -> str:
     if year is None:
         return ""
+    month = extract_month(question)
+    if month:
+        start = f"{year}-{month:02d}-01"
+        end = f"{year}-{month + 1:02d}-01" if month < 12 else f"{year + 1}-01-01"
+        return f"pickup_date >= DATE '{start}' AND pickup_date < DATE '{end}'"
     if any(token in question for token in ("h1", "first half", "nua dau")):
         return f"pickup_date >= DATE '{year}-01-01' AND pickup_date < DATE '{year}-07-01'"
     return f"pickup_date >= DATE '{year}-01-01' AND pickup_date < DATE '{year + 1}-01-01'"

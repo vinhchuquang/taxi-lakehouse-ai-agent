@@ -1,0 +1,282 @@
+[
+  {
+    "id": 1,
+    "path": "mart",
+    "median_ms": 185.6,
+    "min_ms": 185.6,
+    "difficulty": "easy"
+  },
+  {
+    "id": 2,
+    "path": "mart",
+    "median_ms": 383.6,
+    "min_ms": 383.6,
+    "difficulty": "easy"
+  },
+  {
+    "id": 3,
+    "path": "mart",
+    "median_ms": 180.5,
+    "min_ms": 180.5,
+    "difficulty": "medium"
+  },
+  {
+    "id": 4,
+    "path": "mart",
+    "median_ms": 9.0,
+    "min_ms": 9.0,
+    "difficulty": "easy"
+  },
+  {
+    "id": 5,
+    "path": "mart",
+    "median_ms": 138.9,
+    "min_ms": 138.9,
+    "difficulty": "easy"
+  },
+  {
+    "id": 6,
+    "path": "mart",
+    "median_ms": 378.2,
+    "min_ms": 378.2,
+    "difficulty": "medium"
+  },
+  {
+    "id": 7,
+    "path": "mart",
+    "median_ms": 883.0,
+    "min_ms": 883.0,
+    "difficulty": "easy"
+  },
+  {
+    "id": 8,
+    "path": "mart",
+    "median_ms": 1109.6,
+    "min_ms": 1109.6,
+    "difficulty": "medium"
+  },
+  {
+    "id": 9,
+    "path": "mart",
+    "median_ms": 75.1,
+    "min_ms": 75.1,
+    "difficulty": "medium"
+  },
+  {
+    "id": 10,
+    "path": "mart",
+    "median_ms": 299.9,
+    "min_ms": 299.9,
+    "difficulty": "easy"
+  },
+  {
+    "id": 11,
+    "path": "star_schema",
+    "median_ms": 98.0,
+    "min_ms": 98.0,
+    "difficulty": "medium"
+  },
+  {
+    "id": 12,
+    "path": "star_schema",
+    "median_ms": 20.1,
+    "min_ms": 20.1,
+    "difficulty": "easy"
+  },
+  {
+    "id": 13,
+    "path": "star_schema",
+    "median_ms": 455.1,
+    "min_ms": 455.1,
+    "difficulty": "medium"
+  },
+  {
+    "id": 14,
+    "path": "star_schema",
+    "median_ms": 164.5,
+    "min_ms": 164.5,
+    "difficulty": "medium"
+  },
+  {
+    "id": 15,
+    "path": "star_schema",
+    "median_ms": 4.4,
+    "min_ms": 4.4,
+    "difficulty": "medium"
+  },
+  {
+    "id": 16,
+    "path": "star_schema",
+    "median_ms": 969.6,
+    "min_ms": 969.6,
+    "difficulty": "medium"
+  },
+  {
+    "id": 17,
+    "path": "star_schema",
+    "median_ms": 4356.3,
+    "min_ms": 4356.3,
+    "difficulty": "medium"
+  },
+  {
+    "id": 18,
+    "path": "star_schema",
+    "median_ms": 919.7,
+    "min_ms": 919.7,
+    "difficulty": "medium"
+  },
+  {
+    "id": 19,
+    "path": "star_schema",
+    "median_ms": 2143.8,
+    "min_ms": 2143.8,
+    "difficulty": "medium"
+  },
+  {
+    "id": 20,
+    "path": "star_schema",
+    "median_ms": 707.1,
+    "min_ms": 707.1,
+    "difficulty": "hard"
+  },
+  {
+    "id": 21,
+    "path": "star_schema",
+    "median_ms": 1194.5,
+    "min_ms": 1194.5,
+    "difficulty": "hard"
+  },
+  {
+    "id": 22,
+    "path": "star_schema",
+    "median_ms": 214.5,
+    "min_ms": 214.5,
+    "difficulty": "hard"
+  },
+  {
+    "id": 23,
+    "path": "star_schema",
+    "median_ms": 137.7,
+    "min_ms": 137.7,
+    "difficulty": "medium"
+  },
+  {
+    "id": 24,
+    "path": "star_schema",
+    "median_ms": 136.9,
+    "min_ms": 136.9,
+    "difficulty": "medium"
+  },
+  {
+    "id": 25,
+    "path": "star_schema",
+    "median_ms": 257.0,
+    "min_ms": 257.0,
+    "difficulty": "medium"
+  },
+  {
+    "id": 26,
+    "path": "star_schema",
+    "median_ms": 1277.6,
+    "min_ms": 1277.6,
+    "difficulty": "hard"
+  },
+  {
+    "id": 27,
+    "path": "star_schema",
+    "median_ms": 424.4,
+    "min_ms": 424.4,
+    "difficulty": "hard"
+  },
+  {
+    "id": 28,
+    "path": "star_schema",
+    "median_ms": 501.7,
+    "min_ms": 501.7,
+    "difficulty": "hard"
+  },
+  {
+    "id": 29,
+    "path": "star_schema",
+    "median_ms": 573.2,
+    "min_ms": 573.2,
+    "difficulty": "medium"
+  },
+  {
+    "id": 30,
+    "path": "star_schema",
+    "median_ms": 70.9,
+    "min_ms": 70.9,
+    "difficulty": "hard"
+  },
+  {
+    "id": 31,
+    "path": "star_schema",
+    "median_ms": 3.7,
+    "min_ms": 3.7,
+    "difficulty": "easy"
+  },
+  {
+    "id": 32,
+    "path": "star_schema",
+    "median_ms": 45.0,
+    "min_ms": 45.0,
+    "difficulty": "medium"
+  },
+  {
+    "id": 33,
+    "path": "mart",
+    "median_ms": 164.8,
+    "min_ms": 164.8,
+    "difficulty": "medium"
+  },
+  {
+    "id": 34,
+    "path": "star_schema",
+    "median_ms": 513.0,
+    "min_ms": 513.0,
+    "difficulty": "hard"
+  },
+  {
+    "id": 35,
+    "path": "star_schema",
+    "median_ms": 94.8,
+    "min_ms": 94.8,
+    "difficulty": "medium"
+  },
+  {
+    "id": 36,
+    "path": "mart",
+    "median_ms": 318.2,
+    "min_ms": 318.2,
+    "difficulty": "medium"
+  },
+  {
+    "id": 37,
+    "path": "star_schema",
+    "median_ms": 104.2,
+    "min_ms": 104.2,
+    "difficulty": "medium"
+  },
+  {
+    "id": 38,
+    "path": "star_schema",
+    "median_ms": 602.5,
+    "min_ms": 602.5,
+    "difficulty": "hard"
+  },
+  {
+    "id": 39,
+    "path": "mart",
+    "median_ms": 138.4,
+    "min_ms": 138.4,
+    "difficulty": "easy"
+  },
+  {
+    "id": 40,
+    "path": "mart",
+    "median_ms": 1238.5,
+    "min_ms": 1238.5,
+    "difficulty": "medium"
+  }
+]

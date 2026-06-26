@@ -1,0 +1,904 @@
+[
+  {
+    "id": 1,
+    "difficulty": "easy",
+    "tables": [
+      "gold_daily_kpis"
+    ],
+    "question": "Tổng số chuyến của mỗi loại dịch vụ taxi trong nửa đầu năm 2024 là bao nhiêu?",
+    "query": "SELECT service_type, SUM(trip_count) AS trip_count FROM gold_daily_kpis WHERE pickup_date >= DATE '2024-01-01' AND pickup_date < DATE '2024-07-01' GROUP BY service_type ORDER BY trip_count DESC"
+  },
+  {
+    "id": 2,
+    "difficulty": "easy",
+    "tables": [
+      "gold_daily_kpis"
+    ],
+    "question": "Tổng tiền cước của taxi vàng theo từng tháng năm 2024?",
+    "query": "SELECT strftime(pickup_date, '%Y-%m') AS month, SUM(total_fare_amount) AS total_fare_amount FROM gold_daily_kpis WHERE service_type = 'yellow_taxi' AND pickup_date >= DATE '2024-01-01' AND pickup_date < DATE '2025-01-01' GROUP BY 1 ORDER BY 1"
+  },
+  {
+    "id": 3,
+    "difficulty": "medium",
+    "tables": [
+      "gold_daily_kpis"
+    ],
+    "question": "Ngày nào taxi vàng có nhiều chuyến nhất trong năm 2024?",
+    "query": "SELECT pickup_date, SUM(trip_count) AS trip_count FROM gold_daily_kpis WHERE service_type = 'yellow_taxi' AND pickup_date >= DATE '2024-01-01' AND pickup_date < DATE '2025-01-01' GROUP BY pickup_date ORDER BY trip_count DESC LIMIT 1"
+  },
+  {
+    "id": 4,
+    "difficulty": "easy",
+    "tables": [
+      "gold_daily_kpis"
+    ],
+    "question": "Trung bình mỗi ngày taxi xanh có bao nhiêu chuyến trong nửa đầu 2024?",
+    "query": "SELECT AVG(trip_count) AS avg_daily_trips FROM gold_daily_kpis WHERE service_type = 'green_taxi' AND pickup_date >= DATE '2024-01-01' AND pickup_date < DATE '2024-07-01'"
+  },
+  {
+    "id": 5,
+    "difficulty": "easy",
+    "tables": [
+      "gold_daily_kpis"
+    ],
+    "question": "So sánh tổng số chuyến taxi vàng và taxi xanh năm 2024.",
+    "query": "SELECT service_type, SUM(trip_count) AS trip_count FROM gold_daily_kpis WHERE pickup_date >= DATE '2024-01-01' AND pickup_date < DATE '2025-01-01' GROUP BY service_type ORDER BY trip_count DESC"
+  },
+  {
+    "id": 6,
+    "difficulty": "medium",
+    "tables": [
+      "gold_zone_demand"
+    ],
+    "question": "Top 10 khu vực đón khách nhiều chuyến nhất trong nửa đầu 2024?",
+    "query": "SELECT zone_name, SUM(trip_count) AS trip_count FROM gold_zone_demand WHERE pickup_date >= DATE '2024-01-01' AND pickup_date < DATE '2024-07-01' GROUP BY zone_name ORDER BY trip_count DESC LIMIT 10"
+  },
+  {
+    "id": 7,
+    "difficulty": "easy",
+    "tables": [
+      "gold_zone_demand"
+    ],
+    "question": "Tổng doanh thu theo từng borough năm 2024?",
+    "query": "SELECT borough, SUM(total_amount) AS total_amount FROM gold_zone_demand WHERE pickup_date >= DATE '2024-01-01' AND pickup_date < DATE '2025-01-01' GROUP BY borough ORDER BY total_amount DESC"
+  },
+  {
+    "id": 8,
+    "difficulty": "medium",
+    "tables": [
+      "gold_zone_demand"
+    ],
+    "question": "Khu vực nào ở Manhattan có nhiều chuyến đón nhất?",
+    "query": "SELECT zone_name, SUM(trip_count) AS trip_count FROM gold_zone_demand WHERE borough = 'Manhattan' GROUP BY zone_name ORDER BY trip_count DESC LIMIT 1"
+  },
+  {
+    "id": 9,
+    "difficulty": "medium",
+    "tables": [
+      "gold_zone_demand"
+    ],
+    "question": "Top 5 khu vực có doanh thu cao nhất của taxi xanh?",
+    "query": "SELECT zone_name, SUM(total_amount) AS total_amount FROM gold_zone_demand WHERE service_type = 'green_taxi' GROUP BY zone_name ORDER BY total_amount DESC LIMIT 5"
+  },
+  {
+    "id": 10,
+    "difficulty": "easy",
+    "tables": [
+      "gold_zone_demand"
+    ],
+    "question": "Mỗi borough có bao nhiêu chuyến đón trong nửa đầu 2024?",
+    "query": "SELECT borough, SUM(trip_count) AS trip_count FROM gold_zone_demand WHERE pickup_date >= DATE '2024-01-01' AND pickup_date < DATE '2024-07-01' GROUP BY borough ORDER BY trip_count DESC"
+  },
+  {
+    "id": 11,
+    "difficulty": "medium",
+    "tables": [
+      "fact_trips"
+    ],
+    "question": "Quãng đường trung bình mỗi chuyến trong nửa đầu 2024 là bao nhiêu dặm?",
+    "query": "SELECT AVG(trip_distance) AS avg_trip_distance FROM fact_trips WHERE pickup_date >= DATE '2024-01-01' AND pickup_date < DATE '2024-07-01'"
+  },
+  {
+    "id": 12,
+    "difficulty": "easy",
+    "tables": [
+      "fact_trips"
+    ],
+    "question": "Tổng doanh thu của tất cả các chuyến năm 2024?",
+    "query": "SELECT SUM(total_amount) AS total_amount FROM fact_trips WHERE pickup_date >= DATE '2024-01-01' AND pickup_date < DATE '2025-01-01'"
+  },
+  {
+    "id": 13,
+    "difficulty": "medium",
+    "tables": [
+      "fact_trips"
+    ],
+    "question": "Có bao nhiêu chuyến đi xa hơn 10 dặm?",
+    "query": "SELECT COUNT(*) AS trip_count FROM fact_trips WHERE trip_distance > 10"
+  },
+  {
+    "id": 14,
+    "difficulty": "medium",
+    "tables": [
+      "fact_trips"
+    ],
+    "question": "Trung bình mỗi chuyến chở bao nhiêu khách?",
+    "query": "SELECT AVG(passenger_count) AS avg_passengers FROM fact_trips"
+  },
+  {
+    "id": 15,
+    "difficulty": "medium",
+    "tables": [
+      "fact_trips"
+    ],
+    "question": "Cước phí cao nhất của một chuyến là bao nhiêu?",
+    "query": "SELECT MAX(fare_amount) AS max_fare FROM fact_trips"
+  },
+  {
+    "id": 16,
+    "difficulty": "medium",
+    "tables": [
+      "fact_trips",
+      "dim_payment_type"
+    ],
+    "question": "Số chuyến theo từng hình thức thanh toán?",
+    "query": "SELECT p.payment_type_name, COUNT(*) AS trip_count FROM fact_trips AS f JOIN dim_payment_type AS p ON f.payment_type = p.payment_type GROUP BY p.payment_type_name ORDER BY trip_count DESC"
+  },
+  {
+    "id": 17,
+    "difficulty": "medium",
+    "tables": [
+      "fact_trips",
+      "dim_payment_type"
+    ],
+    "question": "Doanh thu theo từng hình thức thanh toán năm 2024?",
+    "query": "SELECT p.payment_type_name, SUM(f.total_amount) AS total_amount FROM fact_trips AS f JOIN dim_payment_type AS p ON f.payment_type = p.payment_type WHERE f.pickup_date >= DATE '2024-01-01' AND f.pickup_date < DATE '2025-01-01' GROUP BY p.payment_type_name ORDER BY total_amount DESC"
+  },
+  {
+    "id": 18,
+    "difficulty": "medium",
+    "tables": [
+      "fact_trips",
+      "dim_vendor"
+    ],
+    "question": "Mỗi hãng xe có bao nhiêu chuyến?",
+    "query": "SELECT v.vendor_name, COUNT(*) AS trip_count FROM fact_trips AS f JOIN dim_vendor AS v ON f.vendor_id = v.vendor_id GROUP BY v.vendor_name ORDER BY trip_count DESC"
+  },
+  {
+    "id": 19,
+    "difficulty": "medium",
+    "tables": [
+      "fact_trips",
+      "dim_vendor"
+    ],
+    "question": "Doanh thu theo từng hãng xe trong nửa đầu 2024?",
+    "query": "SELECT v.vendor_name, SUM(f.total_amount) AS total_amount FROM fact_trips AS f JOIN dim_vendor AS v ON f.vendor_id = v.vendor_id WHERE f.pickup_date >= DATE '2024-01-01' AND f.pickup_date < DATE '2024-07-01' GROUP BY v.vendor_name ORDER BY total_amount DESC"
+  },
+  {
+    "id": 20,
+    "difficulty": "hard",
+    "tables": [
+      "fact_trips",
+      "dim_zone"
+    ],
+    "question": "Top 5 borough điểm đón có nhiều chuyến nhất?",
+    "query": "SELECT z.borough, COUNT(*) AS trip_count FROM fact_trips AS f JOIN dim_zone AS z ON f.pickup_zone_id = z.zone_id GROUP BY z.borough ORDER BY trip_count DESC LIMIT 5"
+  },
+  {
+    "id": 21,
+    "difficulty": "hard",
+    "tables": [
+      "fact_trips",
+      "dim_zone"
+    ],
+    "question": "Borough điểm trả khách nào có doanh thu cao nhất?",
+    "query": "SELECT z.borough, SUM(f.total_amount) AS total_amount FROM fact_trips AS f JOIN dim_zone AS z ON f.dropoff_zone_id = z.zone_id GROUP BY z.borough ORDER BY total_amount DESC LIMIT 1"
+  },
+  {
+    "id": 22,
+    "difficulty": "hard",
+    "tables": [
+      "fact_trips",
+      "dim_zone"
+    ],
+    "question": "Top 10 khu vực đón khách theo doanh thu trong nửa đầu 2024?",
+    "query": "SELECT z.zone_name, SUM(f.total_amount) AS total_amount FROM fact_trips AS f JOIN dim_zone AS z ON f.pickup_zone_id = z.zone_id WHERE f.pickup_date >= DATE '2024-01-01' AND f.pickup_date < DATE '2024-07-01' GROUP BY z.zone_name ORDER BY total_amount DESC LIMIT 10"
+  },
+  {
+    "id": 23,
+    "difficulty": "medium",
+    "tables": [
+      "fact_trips",
+      "dim_date"
+    ],
+    "question": "Số chuyến theo từng tháng trong năm 2024?",
+    "query": "SELECT d.year_month, COUNT(*) AS trip_count FROM fact_trips AS f JOIN dim_date AS d ON f.pickup_date = d.pickup_date WHERE d.year = 2024 GROUP BY d.year_month ORDER BY d.year_month"
+  },
+  {
+    "id": 24,
+    "difficulty": "medium",
+    "tables": [
+      "fact_trips",
+      "dim_date"
+    ],
+    "question": "Số chuyến theo từng quý năm 2024?",
+    "query": "SELECT d.quarter, COUNT(*) AS trip_count FROM fact_trips AS f JOIN dim_date AS d ON f.pickup_date = d.pickup_date WHERE d.year = 2024 GROUP BY d.quarter ORDER BY d.quarter"
+  },
+  {
+    "id": 25,
+    "difficulty": "medium",
+    "tables": [
+      "fact_trips",
+      "dim_date"
+    ],
+    "question": "Số chuyến theo từng thứ trong tuần?",
+    "query": "SELECT d.day_name, COUNT(*) AS trip_count FROM fact_trips AS f JOIN dim_date AS d ON f.pickup_date = d.pickup_date GROUP BY d.day_name ORDER BY trip_count DESC"
+  },
+  {
+    "id": 26,
+    "difficulty": "hard",
+    "tables": [
+      "fact_trips",
+      "dim_zone"
+    ],
+    "question": "So sánh số chuyến giữa borough điểm đón và borough điểm trả.",
+    "query": "SELECT pz.borough AS pickup_borough, dz.borough AS dropoff_borough, COUNT(*) AS trip_count FROM fact_trips AS f JOIN dim_zone AS pz ON f.pickup_zone_id = pz.zone_id JOIN dim_zone AS dz ON f.dropoff_zone_id = dz.zone_id GROUP BY pz.borough, dz.borough ORDER BY trip_count DESC LIMIT 10"
+  },
+  {
+    "id": 27,
+    "difficulty": "hard",
+    "tables": [
+      "fact_trips",
+      "dim_vendor",
+      "dim_date"
+    ],
+    "question": "Số chuyến theo hãng xe theo từng tháng năm 2024?",
+    "query": "SELECT d.year_month, v.vendor_name, COUNT(*) AS trip_count FROM fact_trips AS f JOIN dim_vendor AS v ON f.vendor_id = v.vendor_id JOIN dim_date AS d ON f.pickup_date = d.pickup_date WHERE d.year = 2024 GROUP BY d.year_month, v.vendor_name ORDER BY d.year_month, trip_count DESC"
+  },
+  {
+    "id": 28,
+    "difficulty": "hard",
+    "tables": [
+      "fact_trips",
+      "dim_payment_type",
+      "dim_date"
+    ],
+    "question": "Doanh thu theo hình thức thanh toán theo từng tháng năm 2024?",
+    "query": "SELECT d.year_month, p.payment_type_name, SUM(f.total_amount) AS total_amount FROM fact_trips AS f JOIN dim_payment_type AS p ON f.payment_type = p.payment_type JOIN dim_date AS d ON f.pickup_date = d.pickup_date WHERE d.year = 2024 GROUP BY d.year_month, p.payment_type_name ORDER BY d.year_month, total_amount DESC"
+  },
+  {
+    "id": 29,
+    "difficulty": "medium",
+    "tables": [
+      "fact_trips",
+      "dim_service_type"
+    ],
+    "question": "Quãng đường trung bình mỗi chuyến theo từng loại dịch vụ?",
+    "query": "SELECT s.service_type_name, AVG(f.trip_distance) AS avg_trip_distance FROM fact_trips AS f JOIN dim_service_type AS s ON f.service_type = s.service_type GROUP BY s.service_type_name ORDER BY avg_trip_distance DESC"
+  },
+  {
+    "id": 30,
+    "difficulty": "hard",
+    "tables": [
+      "fact_trips",
+      "dim_zone"
+    ],
+    "question": "Top 5 khu vực đón khách của taxi vàng trong tháng 1 năm 2024?",
+    "query": "SELECT z.zone_name, COUNT(*) AS trip_count FROM fact_trips AS f JOIN dim_zone AS z ON f.pickup_zone_id = z.zone_id WHERE f.service_type = 'yellow_taxi' AND f.pickup_date >= DATE '2024-01-01' AND f.pickup_date < DATE '2024-02-01' GROUP BY z.zone_name ORDER BY trip_count DESC LIMIT 5"
+  },
+  {
+    "id": 31,
+    "difficulty": "easy",
+    "tables": [
+      "fact_trips"
+    ],
+    "question": "Tổng cộng có bao nhiêu chuyến trong nửa đầu 2024?",
+    "query": "SELECT COUNT(*) AS trip_count FROM fact_trips WHERE pickup_date >= DATE '2024-01-01' AND pickup_date < DATE '2024-07-01'"
+  },
+  {
+    "id": 32,
+    "difficulty": "medium",
+    "tables": [
+      "fact_trips"
+    ],
+    "question": "Doanh thu trung bình mỗi chuyến là bao nhiêu?",
+    "query": "SELECT AVG(total_amount) AS avg_total_amount FROM fact_trips"
+  },
+  {
+    "id": 33,
+    "difficulty": "medium",
+    "tables": [
+      "gold_daily_kpis"
+    ],
+    "question": "Quãng đường trung bình mỗi chuyến theo từng loại dịch vụ trong năm 2024?",
+    "query": "SELECT service_type, AVG(avg_trip_distance) AS avg_trip_distance FROM gold_daily_kpis WHERE pickup_date >= DATE '2024-01-01' AND pickup_date < DATE '2025-01-01' GROUP BY service_type ORDER BY avg_trip_distance DESC"
+  },
+  {
+    "id": 34,
+    "difficulty": "hard",
+    "tables": [
+      "fact_trips",
+      "dim_payment_type"
+    ],
+    "question": "Tỉ lệ số chuyến thanh toán bằng thẻ so với tổng số chuyến?",
+    "query": "SELECT SUM(CASE WHEN p.payment_type_name = 'Credit card' THEN 1 ELSE 0 END) * 1.0 / COUNT(*) AS card_ratio FROM fact_trips AS f JOIN dim_payment_type AS p ON f.payment_type = p.payment_type"
+  },
+  {
+    "id": 35,
+    "difficulty": "medium",
+    "tables": [
+      "fact_trips",
+      "dim_zone"
+    ],
+    "question": "Có bao nhiêu chuyến đón khách ở borough Queens?",
+    "query": "SELECT COUNT(*) AS trip_count FROM fact_trips AS f JOIN dim_zone AS z ON f.pickup_zone_id = z.zone_id WHERE z.borough = 'Queens'"
+  },
+  {
+    "id": 36,
+    "difficulty": "medium",
+    "tables": [
+      "gold_zone_demand"
+    ],
+    "question": "Số chuyến và doanh thu theo borough của taxi vàng trong nửa đầu 2024?",
+    "query": "SELECT borough, SUM(trip_count) AS trip_count, SUM(total_amount) AS total_amount FROM gold_zone_demand WHERE service_type = 'yellow_taxi' AND pickup_date >= DATE '2024-01-01' AND pickup_date < DATE '2024-07-01' GROUP BY borough ORDER BY trip_count DESC"
+  },
+  {
+    "id": 37,
+    "difficulty": "medium",
+    "tables": [
+      "fact_trips",
+      "dim_date"
+    ],
+    "question": "Tổng doanh thu theo từng tháng năm 2024?",
+    "query": "SELECT d.year_month, SUM(f.total_amount) AS total_amount FROM fact_trips AS f JOIN dim_date AS d ON f.pickup_date = d.pickup_date WHERE d.year = 2024 GROUP BY d.year_month ORDER BY d.year_month"
+  },
+  {
+    "id": 38,
+    "difficulty": "hard",
+    "tables": [
+      "fact_trips",
+      "dim_vendor"
+    ],
+    "question": "Hãng xe nào có quãng đường trung bình mỗi chuyến dài nhất?",
+    "query": "SELECT v.vendor_name, AVG(f.trip_distance) AS avg_trip_distance FROM fact_trips AS f JOIN dim_vendor AS v ON f.vendor_id = v.vendor_id GROUP BY v.vendor_name ORDER BY avg_trip_distance DESC LIMIT 1"
+  },
+  {
+    "id": 39,
+    "difficulty": "easy",
+    "tables": [
+      "gold_daily_kpis"
+    ],
+    "question": "Tổng số chuyến mỗi tháng năm 2024 (gộp cả hai loại dịch vụ)?",
+    "query": "SELECT strftime(pickup_date, '%Y-%m') AS month, SUM(trip_count) AS trip_count FROM gold_daily_kpis WHERE pickup_date >= DATE '2024-01-01' AND pickup_date < DATE '2025-01-01' GROUP BY 1 ORDER BY 1"
+  },
+  {
+    "id": 40,
+    "difficulty": "medium",
+    "tables": [
+      "gold_zone_demand"
+    ],
+    "question": "Có bao nhiêu khu vực (zone) khác nhau có phát sinh chuyến đón?",
+    "query": "SELECT COUNT(DISTINCT zone_id) AS zone_count FROM gold_zone_demand"
+  },
+  {
+    "id": 41,
+    "difficulty": "easy",
+    "tables": [
+      "gold_daily_kpis"
+    ],
+    "question": "Tổng số chuyến của mỗi loại dịch vụ taxi trong cả năm 2024?",
+    "query": "SELECT service_type, SUM(trip_count) AS trip_count FROM gold_daily_kpis WHERE pickup_date >= DATE '2024-01-01' AND pickup_date < DATE '2025-01-01' GROUP BY service_type ORDER BY trip_count DESC"
+  },
+  {
+    "id": 42,
+    "difficulty": "easy",
+    "tables": [
+      "gold_daily_kpis"
+    ],
+    "question": "Tổng tiền cước của mỗi loại dịch vụ taxi trong nửa đầu năm 2024?",
+    "query": "SELECT service_type, SUM(total_fare_amount) AS total_fare_amount FROM gold_daily_kpis WHERE pickup_date >= DATE '2024-01-01' AND pickup_date < DATE '2024-07-01' GROUP BY service_type ORDER BY total_fare_amount DESC"
+  },
+  {
+    "id": 43,
+    "difficulty": "easy",
+    "tables": [
+      "gold_daily_kpis"
+    ],
+    "question": "Tổng số chuyến của cả hai loại taxi trong năm 2024 là bao nhiêu?",
+    "query": "SELECT SUM(trip_count) AS trip_count FROM gold_daily_kpis WHERE pickup_date >= DATE '2024-01-01' AND pickup_date < DATE '2025-01-01'"
+  },
+  {
+    "id": 44,
+    "difficulty": "easy",
+    "tables": [
+      "gold_daily_kpis"
+    ],
+    "question": "Tổng số chuyến của taxi vàng trong tháng 3 năm 2024?",
+    "query": "SELECT SUM(trip_count) AS trip_count FROM gold_daily_kpis WHERE service_type = 'yellow_taxi' AND pickup_date >= DATE '2024-03-01' AND pickup_date < DATE '2024-04-01'"
+  },
+  {
+    "id": 45,
+    "difficulty": "medium",
+    "tables": [
+      "gold_daily_kpis"
+    ],
+    "question": "Tổng số chuyến của taxi xanh theo từng tháng năm 2024?",
+    "query": "SELECT strftime(pickup_date, '%Y-%m') AS month, SUM(trip_count) AS trip_count FROM gold_daily_kpis WHERE service_type = 'green_taxi' AND pickup_date >= DATE '2024-01-01' AND pickup_date < DATE '2025-01-01' GROUP BY 1 ORDER BY 1"
+  },
+  {
+    "id": 46,
+    "difficulty": "medium",
+    "tables": [
+      "gold_daily_kpis"
+    ],
+    "question": "Tổng tiền cước của taxi xanh theo từng tháng năm 2024?",
+    "query": "SELECT strftime(pickup_date, '%Y-%m') AS month, SUM(total_fare_amount) AS total_fare_amount FROM gold_daily_kpis WHERE service_type = 'green_taxi' AND pickup_date >= DATE '2024-01-01' AND pickup_date < DATE '2025-01-01' GROUP BY 1 ORDER BY 1"
+  },
+  {
+    "id": 47,
+    "difficulty": "medium",
+    "tables": [
+      "gold_daily_kpis"
+    ],
+    "question": "Tháng nào taxi vàng có tổng số chuyến cao nhất trong năm 2024?",
+    "query": "SELECT strftime(pickup_date, '%Y-%m') AS month, SUM(trip_count) AS trip_count FROM gold_daily_kpis WHERE service_type = 'yellow_taxi' AND pickup_date >= DATE '2024-01-01' AND pickup_date < DATE '2025-01-01' GROUP BY 1 ORDER BY trip_count DESC LIMIT 1"
+  },
+  {
+    "id": 48,
+    "difficulty": "medium",
+    "tables": [
+      "gold_daily_kpis"
+    ],
+    "question": "Ngày nào taxi xanh có nhiều chuyến nhất trong nửa đầu 2024?",
+    "query": "SELECT pickup_date, SUM(trip_count) AS trip_count FROM gold_daily_kpis WHERE service_type = 'green_taxi' AND pickup_date >= DATE '2024-01-01' AND pickup_date < DATE '2024-07-01' GROUP BY pickup_date ORDER BY trip_count DESC LIMIT 1"
+  },
+  {
+    "id": 49,
+    "difficulty": "medium",
+    "tables": [
+      "gold_daily_kpis"
+    ],
+    "question": "Tổng tiền cước của taxi vàng trong cả năm 2024?",
+    "query": "SELECT SUM(total_fare_amount) AS total_fare_amount FROM gold_daily_kpis WHERE service_type = 'yellow_taxi' AND pickup_date >= DATE '2024-01-01' AND pickup_date < DATE '2025-01-01'"
+  },
+  {
+    "id": 50,
+    "difficulty": "easy",
+    "tables": [
+      "gold_zone_demand"
+    ],
+    "question": "Top 10 khu vực đón khách có nhiều chuyến nhất?",
+    "query": "SELECT zone_name, SUM(trip_count) AS trip_count FROM gold_zone_demand GROUP BY zone_name ORDER BY trip_count DESC LIMIT 10"
+  },
+  {
+    "id": 51,
+    "difficulty": "medium",
+    "tables": [
+      "gold_zone_demand"
+    ],
+    "question": "Top 10 khu vực đón khách có doanh thu cao nhất?",
+    "query": "SELECT zone_name, SUM(total_amount) AS total_amount FROM gold_zone_demand GROUP BY zone_name ORDER BY total_amount DESC LIMIT 10"
+  },
+  {
+    "id": 52,
+    "difficulty": "medium",
+    "tables": [
+      "gold_zone_demand"
+    ],
+    "question": "Top 5 khu vực đón khách nhiều chuyến nhất của taxi vàng?",
+    "query": "SELECT zone_name, SUM(trip_count) AS trip_count FROM gold_zone_demand WHERE service_type = 'yellow_taxi' GROUP BY zone_name ORDER BY trip_count DESC LIMIT 5"
+  },
+  {
+    "id": 53,
+    "difficulty": "medium",
+    "tables": [
+      "gold_zone_demand"
+    ],
+    "question": "Top 5 khu vực có doanh thu cao nhất của taxi vàng?",
+    "query": "SELECT zone_name, SUM(total_amount) AS total_amount FROM gold_zone_demand WHERE service_type = 'yellow_taxi' GROUP BY zone_name ORDER BY total_amount DESC LIMIT 5"
+  },
+  {
+    "id": 54,
+    "difficulty": "easy",
+    "tables": [
+      "gold_zone_demand"
+    ],
+    "question": "Tổng số chuyến đón khách theo từng borough?",
+    "query": "SELECT borough, SUM(trip_count) AS trip_count FROM gold_zone_demand GROUP BY borough ORDER BY trip_count DESC"
+  },
+  {
+    "id": 55,
+    "difficulty": "medium",
+    "tables": [
+      "gold_zone_demand"
+    ],
+    "question": "Doanh thu theo từng borough điểm đón?",
+    "query": "SELECT borough, SUM(total_amount) AS total_amount FROM gold_zone_demand GROUP BY borough ORDER BY total_amount DESC"
+  },
+  {
+    "id": 56,
+    "difficulty": "medium",
+    "tables": [
+      "gold_zone_demand"
+    ],
+    "question": "Top 3 borough điểm đón có doanh thu cao nhất?",
+    "query": "SELECT borough, SUM(total_amount) AS total_amount FROM gold_zone_demand GROUP BY borough ORDER BY total_amount DESC LIMIT 3"
+  },
+  {
+    "id": 57,
+    "difficulty": "medium",
+    "tables": [
+      "gold_zone_demand"
+    ],
+    "question": "Khu vực đón khách nào có nhiều chuyến nhất trong nửa đầu 2024?",
+    "query": "SELECT zone_name, SUM(trip_count) AS trip_count FROM gold_zone_demand WHERE pickup_date >= DATE '2024-01-01' AND pickup_date < DATE '2024-07-01' GROUP BY zone_name ORDER BY trip_count DESC LIMIT 1"
+  },
+  {
+    "id": 58,
+    "difficulty": "hard",
+    "tables": [
+      "gold_zone_demand"
+    ],
+    "question": "Top 5 khu vực đón khách nhiều chuyến nhất của taxi xanh trong nửa đầu 2024?",
+    "query": "SELECT zone_name, SUM(trip_count) AS trip_count FROM gold_zone_demand WHERE service_type = 'green_taxi' AND pickup_date >= DATE '2024-01-01' AND pickup_date < DATE '2024-07-01' GROUP BY zone_name ORDER BY trip_count DESC LIMIT 5"
+  },
+  {
+    "id": 59,
+    "difficulty": "hard",
+    "tables": [
+      "gold_zone_demand"
+    ],
+    "question": "Top 5 khu vực có doanh thu cao nhất của taxi vàng trong tháng 2 năm 2024?",
+    "query": "SELECT zone_name, SUM(total_amount) AS total_amount FROM gold_zone_demand WHERE service_type = 'yellow_taxi' AND pickup_date >= DATE '2024-02-01' AND pickup_date < DATE '2024-03-01' GROUP BY zone_name ORDER BY total_amount DESC LIMIT 5"
+  },
+  {
+    "id": 60,
+    "difficulty": "medium",
+    "tables": [
+      "gold_zone_demand"
+    ],
+    "question": "Tổng doanh thu của taxi xanh trên toàn bộ các khu vực?",
+    "query": "SELECT SUM(total_amount) AS total_amount FROM gold_zone_demand WHERE service_type = 'green_taxi'"
+  },
+  {
+    "id": 61,
+    "difficulty": "medium",
+    "tables": [
+      "fact_trips",
+      "dim_vendor"
+    ],
+    "question": "Tổng số chuyến theo từng hãng xe trong năm 2024?",
+    "query": "SELECT v.vendor_name, COUNT(*) AS trip_count FROM fact_trips AS f JOIN dim_vendor AS v ON f.vendor_id = v.vendor_id WHERE f.pickup_date >= DATE '2024-01-01' AND f.pickup_date < DATE '2025-01-01' GROUP BY v.vendor_name ORDER BY trip_count DESC"
+  },
+  {
+    "id": 62,
+    "difficulty": "medium",
+    "tables": [
+      "fact_trips",
+      "dim_vendor"
+    ],
+    "question": "Doanh thu theo từng hãng xe trong cả năm 2024?",
+    "query": "SELECT v.vendor_name, SUM(f.total_amount) AS total_amount FROM fact_trips AS f JOIN dim_vendor AS v ON f.vendor_id = v.vendor_id WHERE f.pickup_date >= DATE '2024-01-01' AND f.pickup_date < DATE '2025-01-01' GROUP BY v.vendor_name ORDER BY total_amount DESC"
+  },
+  {
+    "id": 63,
+    "difficulty": "hard",
+    "tables": [
+      "fact_trips",
+      "dim_vendor"
+    ],
+    "question": "Hãng xe nào có doanh thu cao nhất trong nửa đầu 2024?",
+    "query": "SELECT v.vendor_name, SUM(f.total_amount) AS total_amount FROM fact_trips AS f JOIN dim_vendor AS v ON f.vendor_id = v.vendor_id WHERE f.pickup_date >= DATE '2024-01-01' AND f.pickup_date < DATE '2024-07-01' GROUP BY v.vendor_name ORDER BY total_amount DESC LIMIT 1"
+  },
+  {
+    "id": 64,
+    "difficulty": "hard",
+    "tables": [
+      "fact_trips",
+      "dim_vendor"
+    ],
+    "question": "Hãng xe nào có nhiều chuyến nhất?",
+    "query": "SELECT v.vendor_name, COUNT(*) AS trip_count FROM fact_trips AS f JOIN dim_vendor AS v ON f.vendor_id = v.vendor_id GROUP BY v.vendor_name ORDER BY trip_count DESC LIMIT 1"
+  },
+  {
+    "id": 65,
+    "difficulty": "medium",
+    "tables": [
+      "fact_trips",
+      "dim_vendor"
+    ],
+    "question": "Tổng tiền cước theo từng hãng xe trong nửa đầu 2024?",
+    "query": "SELECT v.vendor_name, SUM(f.fare_amount) AS total_fare_amount FROM fact_trips AS f JOIN dim_vendor AS v ON f.vendor_id = v.vendor_id WHERE f.pickup_date >= DATE '2024-01-01' AND f.pickup_date < DATE '2024-07-01' GROUP BY v.vendor_name ORDER BY total_fare_amount DESC"
+  },
+  {
+    "id": 66,
+    "difficulty": "medium",
+    "tables": [
+      "fact_trips",
+      "dim_payment_type"
+    ],
+    "question": "Tổng số chuyến theo từng hình thức thanh toán trong năm 2024?",
+    "query": "SELECT p.payment_type_name, COUNT(*) AS trip_count FROM fact_trips AS f JOIN dim_payment_type AS p ON f.payment_type = p.payment_type WHERE f.pickup_date >= DATE '2024-01-01' AND f.pickup_date < DATE '2025-01-01' GROUP BY p.payment_type_name ORDER BY trip_count DESC"
+  },
+  {
+    "id": 67,
+    "difficulty": "medium",
+    "tables": [
+      "fact_trips",
+      "dim_payment_type"
+    ],
+    "question": "Doanh thu theo từng hình thức thanh toán trong nửa đầu 2024?",
+    "query": "SELECT p.payment_type_name, SUM(f.total_amount) AS total_amount FROM fact_trips AS f JOIN dim_payment_type AS p ON f.payment_type = p.payment_type WHERE f.pickup_date >= DATE '2024-01-01' AND f.pickup_date < DATE '2024-07-01' GROUP BY p.payment_type_name ORDER BY total_amount DESC"
+  },
+  {
+    "id": 68,
+    "difficulty": "hard",
+    "tables": [
+      "fact_trips",
+      "dim_payment_type"
+    ],
+    "question": "Hình thức thanh toán nào có nhiều chuyến nhất?",
+    "query": "SELECT p.payment_type_name, COUNT(*) AS trip_count FROM fact_trips AS f JOIN dim_payment_type AS p ON f.payment_type = p.payment_type GROUP BY p.payment_type_name ORDER BY trip_count DESC LIMIT 1"
+  },
+  {
+    "id": 69,
+    "difficulty": "medium",
+    "tables": [
+      "fact_trips",
+      "dim_zone"
+    ],
+    "question": "Tổng số chuyến theo từng borough điểm đón trong năm 2024?",
+    "query": "SELECT z.borough, COUNT(*) AS trip_count FROM fact_trips AS f JOIN dim_zone AS z ON f.pickup_zone_id = z.zone_id WHERE f.pickup_date >= DATE '2024-01-01' AND f.pickup_date < DATE '2025-01-01' GROUP BY z.borough ORDER BY trip_count DESC"
+  },
+  {
+    "id": 70,
+    "difficulty": "hard",
+    "tables": [
+      "fact_trips",
+      "dim_zone"
+    ],
+    "question": "Top 5 borough điểm trả khách có doanh thu cao nhất?",
+    "query": "SELECT z.borough, SUM(f.total_amount) AS total_amount FROM fact_trips AS f JOIN dim_zone AS z ON f.dropoff_zone_id = z.zone_id GROUP BY z.borough ORDER BY total_amount DESC LIMIT 5"
+  },
+  {
+    "id": 71,
+    "difficulty": "hard",
+    "tables": [
+      "fact_trips",
+      "dim_zone"
+    ],
+    "question": "Borough điểm đón nào có nhiều chuyến nhất?",
+    "query": "SELECT z.borough, COUNT(*) AS trip_count FROM fact_trips AS f JOIN dim_zone AS z ON f.pickup_zone_id = z.zone_id GROUP BY z.borough ORDER BY trip_count DESC LIMIT 1"
+  },
+  {
+    "id": 72,
+    "difficulty": "medium",
+    "tables": [
+      "gold_daily_kpis"
+    ],
+    "question": "Tổng số chuyến của cả hai loại taxi theo từng tháng năm 2024?",
+    "query": "SELECT strftime(pickup_date, '%Y-%m') AS month, SUM(trip_count) AS trip_count FROM gold_daily_kpis WHERE pickup_date >= DATE '2024-01-01' AND pickup_date < DATE '2025-01-01' GROUP BY 1 ORDER BY 1"
+  },
+  {
+    "id": 73,
+    "difficulty": "easy",
+    "tables": [
+      "gold_daily_kpis"
+    ],
+    "question": "Tổng số chuyến trong tháng 1 năm 2024?",
+    "query": "SELECT SUM(trip_count) AS trip_count FROM gold_daily_kpis WHERE pickup_date >= DATE '2024-01-01' AND pickup_date < DATE '2024-02-01'"
+  },
+  {
+    "id": 74,
+    "difficulty": "medium",
+    "tables": [
+      "gold_daily_kpis"
+    ],
+    "question": "Ngày nào có tổng số chuyến cao nhất trong năm 2024?",
+    "query": "SELECT pickup_date, SUM(trip_count) AS trip_count FROM gold_daily_kpis WHERE pickup_date >= DATE '2024-01-01' AND pickup_date < DATE '2025-01-01' GROUP BY pickup_date ORDER BY trip_count DESC LIMIT 1"
+  },
+  {
+    "id": 75,
+    "difficulty": "hard",
+    "tables": [
+      "fact_trips",
+      "dim_vendor"
+    ],
+    "question": "Doanh thu theo từng hãng xe của taxi vàng trong nửa đầu 2024?",
+    "query": "SELECT v.vendor_name, SUM(f.total_amount) AS total_amount FROM fact_trips AS f JOIN dim_vendor AS v ON f.vendor_id = v.vendor_id WHERE f.service_type = 'yellow_taxi' AND f.pickup_date >= DATE '2024-01-01' AND f.pickup_date < DATE '2024-07-01' GROUP BY v.vendor_name ORDER BY total_amount DESC"
+  },
+  {
+    "id": 76,
+    "difficulty": "hard",
+    "tables": [
+      "gold_zone_demand"
+    ],
+    "question": "Top 3 borough điểm đón có nhiều chuyến nhất của taxi vàng?",
+    "query": "SELECT borough, SUM(trip_count) AS trip_count FROM gold_zone_demand WHERE service_type = 'yellow_taxi' GROUP BY borough ORDER BY trip_count DESC LIMIT 3"
+  },
+  {
+    "id": 77,
+    "difficulty": "medium",
+    "tables": [
+      "fact_trips"
+    ],
+    "question": "Tổng số hành khách theo từng loại dịch vụ trong nửa đầu 2024?",
+    "query": "SELECT service_type, SUM(passenger_count) AS total_passengers FROM fact_trips WHERE pickup_date >= DATE '2024-01-01' AND pickup_date < DATE '2024-07-01' GROUP BY service_type ORDER BY total_passengers DESC"
+  },
+  {
+    "id": 78,
+    "difficulty": "medium",
+    "tables": [
+      "fact_trips"
+    ],
+    "question": "Tổng quãng đường của taxi xanh trong năm 2024?",
+    "query": "SELECT SUM(trip_distance) AS total_distance FROM fact_trips WHERE service_type = 'green_taxi' AND pickup_date >= DATE '2024-01-01' AND pickup_date < DATE '2025-01-01'"
+  },
+  {
+    "id": 79,
+    "difficulty": "medium",
+    "tables": [
+      "fact_trips"
+    ],
+    "question": "Quãng đường trung bình mỗi chuyến của taxi vàng trong nửa đầu 2024?",
+    "query": "SELECT AVG(trip_distance) AS avg_trip_distance FROM fact_trips WHERE service_type = 'yellow_taxi' AND pickup_date >= DATE '2024-01-01' AND pickup_date < DATE '2024-07-01'"
+  },
+  {
+    "id": 80,
+    "difficulty": "medium",
+    "tables": [
+      "fact_trips"
+    ],
+    "question": "Doanh thu trung bình mỗi chuyến của taxi vàng trong nửa đầu 2024?",
+    "query": "SELECT AVG(total_amount) AS avg_total_amount FROM fact_trips WHERE service_type = 'yellow_taxi' AND pickup_date >= DATE '2024-01-01' AND pickup_date < DATE '2024-07-01'"
+  },
+  {
+    "id": 81,
+    "difficulty": "medium",
+    "tables": [
+      "gold_daily_kpis"
+    ],
+    "question": "Số chuyến theo từng loại dịch vụ trong tháng 6 năm 2024?",
+    "query": "SELECT service_type, SUM(trip_count) AS trip_count FROM gold_daily_kpis WHERE pickup_date >= DATE '2024-06-01' AND pickup_date < DATE '2024-07-01' GROUP BY service_type ORDER BY trip_count DESC"
+  },
+  {
+    "id": 82,
+    "difficulty": "medium",
+    "tables": [
+      "gold_daily_kpis"
+    ],
+    "question": "Tổng số chuyến của taxi vàng theo từng tháng trong nửa đầu 2024?",
+    "query": "SELECT strftime(pickup_date, '%Y-%m') AS month, SUM(trip_count) AS trip_count FROM gold_daily_kpis WHERE service_type = 'yellow_taxi' AND pickup_date >= DATE '2024-01-01' AND pickup_date < DATE '2024-07-01' GROUP BY 1 ORDER BY 1"
+  },
+  {
+    "id": 83,
+    "difficulty": "easy",
+    "tables": [
+      "gold_daily_kpis"
+    ],
+    "question": "Tổng tiền cước của taxi xanh trong tháng 4 năm 2024?",
+    "query": "SELECT SUM(total_fare_amount) AS total_fare_amount FROM gold_daily_kpis WHERE service_type = 'green_taxi' AND pickup_date >= DATE '2024-04-01' AND pickup_date < DATE '2024-05-01'"
+  },
+  {
+    "id": 84,
+    "difficulty": "medium",
+    "tables": [
+      "gold_daily_kpis"
+    ],
+    "question": "Tháng nào taxi xanh có tổng tiền cước cao nhất trong năm 2024?",
+    "query": "SELECT strftime(pickup_date, '%Y-%m') AS month, SUM(total_fare_amount) AS total_fare_amount FROM gold_daily_kpis WHERE service_type = 'green_taxi' AND pickup_date >= DATE '2024-01-01' AND pickup_date < DATE '2025-01-01' GROUP BY 1 ORDER BY total_fare_amount DESC LIMIT 1"
+  },
+  {
+    "id": 85,
+    "difficulty": "medium",
+    "tables": [
+      "gold_zone_demand"
+    ],
+    "question": "Top 10 khu vực có doanh thu cao nhất của taxi xanh?",
+    "query": "SELECT zone_name, SUM(total_amount) AS total_amount FROM gold_zone_demand WHERE service_type = 'green_taxi' GROUP BY zone_name ORDER BY total_amount DESC LIMIT 10"
+  },
+  {
+    "id": 86,
+    "difficulty": "hard",
+    "tables": [
+      "gold_zone_demand"
+    ],
+    "question": "Top 10 khu vực đón khách nhiều chuyến nhất trong tháng 1 năm 2024?",
+    "query": "SELECT zone_name, SUM(trip_count) AS trip_count FROM gold_zone_demand WHERE pickup_date >= DATE '2024-01-01' AND pickup_date < DATE '2024-02-01' GROUP BY zone_name ORDER BY trip_count DESC LIMIT 10"
+  },
+  {
+    "id": 87,
+    "difficulty": "easy",
+    "tables": [
+      "gold_zone_demand"
+    ],
+    "question": "Tổng doanh thu của tất cả các khu vực đón khách?",
+    "query": "SELECT SUM(total_amount) AS total_amount FROM gold_zone_demand"
+  },
+  {
+    "id": 88,
+    "difficulty": "medium",
+    "tables": [
+      "gold_zone_demand"
+    ],
+    "question": "Top 3 borough điểm đón có nhiều chuyến nhất?",
+    "query": "SELECT borough, SUM(trip_count) AS trip_count FROM gold_zone_demand GROUP BY borough ORDER BY trip_count DESC LIMIT 3"
+  },
+  {
+    "id": 89,
+    "difficulty": "hard",
+    "tables": [
+      "gold_zone_demand"
+    ],
+    "question": "Top 5 borough điểm đón có doanh thu cao nhất của taxi vàng?",
+    "query": "SELECT borough, SUM(total_amount) AS total_amount FROM gold_zone_demand WHERE service_type = 'yellow_taxi' GROUP BY borough ORDER BY total_amount DESC LIMIT 5"
+  },
+  {
+    "id": 90,
+    "difficulty": "medium",
+    "tables": [
+      "fact_trips",
+      "dim_vendor"
+    ],
+    "question": "Hãng xe nào có quãng đường trung bình mỗi chuyến dài nhất trong năm 2024?",
+    "query": "SELECT v.vendor_name, AVG(f.trip_distance) AS avg_trip_distance FROM fact_trips AS f JOIN dim_vendor AS v ON f.vendor_id = v.vendor_id WHERE f.pickup_date >= DATE '2024-01-01' AND f.pickup_date < DATE '2025-01-01' GROUP BY v.vendor_name ORDER BY avg_trip_distance DESC LIMIT 1"
+  },
+  {
+    "id": 91,
+    "difficulty": "medium",
+    "tables": [
+      "fact_trips",
+      "dim_payment_type"
+    ],
+    "question": "Doanh thu theo từng hình thức thanh toán trong cả năm 2024?",
+    "query": "SELECT p.payment_type_name, SUM(f.total_amount) AS total_amount FROM fact_trips AS f JOIN dim_payment_type AS p ON f.payment_type = p.payment_type WHERE f.pickup_date >= DATE '2024-01-01' AND f.pickup_date < DATE '2025-01-01' GROUP BY p.payment_type_name ORDER BY total_amount DESC"
+  },
+  {
+    "id": 92,
+    "difficulty": "hard",
+    "tables": [
+      "fact_trips",
+      "dim_payment_type"
+    ],
+    "question": "Hình thức thanh toán nào có doanh thu cao nhất trong nửa đầu 2024?",
+    "query": "SELECT p.payment_type_name, SUM(f.total_amount) AS total_amount FROM fact_trips AS f JOIN dim_payment_type AS p ON f.payment_type = p.payment_type WHERE f.pickup_date >= DATE '2024-01-01' AND f.pickup_date < DATE '2024-07-01' GROUP BY p.payment_type_name ORDER BY total_amount DESC LIMIT 1"
+  },
+  {
+    "id": 93,
+    "difficulty": "medium",
+    "tables": [
+      "fact_trips",
+      "dim_service_type"
+    ],
+    "question": "Tổng số chuyến theo tên loại dịch vụ trong nửa đầu 2024?",
+    "query": "SELECT s.service_type_name, COUNT(*) AS trip_count FROM fact_trips AS f JOIN dim_service_type AS s ON f.service_type = s.service_type WHERE f.pickup_date >= DATE '2024-01-01' AND f.pickup_date < DATE '2024-07-01' GROUP BY s.service_type_name ORDER BY trip_count DESC"
+  },
+  {
+    "id": 94,
+    "difficulty": "medium",
+    "tables": [
+      "fact_trips",
+      "dim_service_type"
+    ],
+    "question": "Doanh thu theo tên loại dịch vụ trong năm 2024?",
+    "query": "SELECT s.service_type_name, SUM(f.total_amount) AS total_amount FROM fact_trips AS f JOIN dim_service_type AS s ON f.service_type = s.service_type WHERE f.pickup_date >= DATE '2024-01-01' AND f.pickup_date < DATE '2025-01-01' GROUP BY s.service_type_name ORDER BY total_amount DESC"
+  },
+  {
+    "id": 95,
+    "difficulty": "easy",
+    "tables": [
+      "gold_zone_demand"
+    ],
+    "question": "Tổng số chuyến đón khách của taxi vàng trên toàn thành phố?",
+    "query": "SELECT SUM(trip_count) AS trip_count FROM gold_zone_demand WHERE service_type = 'yellow_taxi'"
+  },
+  {
+    "id": 96,
+    "difficulty": "medium",
+    "tables": [
+      "gold_daily_kpis"
+    ],
+    "question": "Tổng số chuyến của taxi xanh trong nửa đầu 2024?",
+    "query": "SELECT SUM(trip_count) AS trip_count FROM gold_daily_kpis WHERE service_type = 'green_taxi' AND pickup_date >= DATE '2024-01-01' AND pickup_date < DATE '2024-07-01'"
+  }
+]

@@ -34,3 +34,17 @@ logs/
 # dbt artifacts
 dbt/target/
 dbt/dbt_packages/
+
+# Benchmark data + outputs (large / regenerable)
+spider_data/
+spider_data.zip
+benchmarks/spider/test-suite-sql-eval/
+benchmarks/**/results*.json
+benchmarks/**/*_results.json
+benchmarks/**/latency_results.json
+benchmarks/spider/*.pred_*.sql
+
+# Thesis report (kept out of code repo)
+Đồ_án_TN_ChuQuangVinh_official/
+Đồ_án_TN_ChuQuangVinh_official.zip
+main (*).pdf
